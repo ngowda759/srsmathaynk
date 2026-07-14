@@ -141,6 +141,49 @@ Runs ESLint.
 
 ---
 
+## Database
+
+### Database Commands
+
+```bash
+# Generate Prisma Client
+npm run db:generate
+
+# Run migrations
+npm run db:migrate
+
+# Apply migrations (production)
+npm run db:migrate:deploy
+
+# Push schema to database
+npm run db:push
+
+# Open Prisma Studio
+npm run db:studio
+
+# Seed reference data
+npm run db:seed
+
+# Reset database (DANGER!)
+npm run db:reset
+```
+
+### Migration Status
+
+```bash
+npx prisma migrate status
+```
+
+### Validate Schema
+
+```bash
+npx prisma validate
+```
+
+For detailed database documentation, see [docs/DATABASE.md](docs/DATABASE.md).
+
+---
+
 ## Development Guidelines
 
 * Use TypeScript for all new code.
