@@ -1,6 +1,6 @@
 // =============================================================================
 // Sri Raghavendra Swamy Temple - Database Schema
-// Domain Model v5 - Approved Architecture
+// Domain Model v5 - Sprint 2.2.1 - Final Architecture
 // =============================================================================
 
 generator client {
@@ -17,13 +17,17 @@ datasource db {
 
 /// User Profile - linked to Supabase Auth
 model Profile {
-  id            String    @id @default(uuid())
-  userId        String    @unique
-  email         String    @unique
-  name          String?
-  phone         String?
-  address       String?
-  avatarUrl     String?
+  id      String  @id @default(uuid())
+  userId  String  @unique
+  email   String  @unique
+  name    String?
+  phone   String?
+  address String?
+
+  // Media - Avatar
+  avatarId String?
+  avatar   Media?  @relation("ProfileAvatars", fields: [avatarId], references: [id])
+
   emailVerified Boolean   @default(false)
   isActive      Boolean   @default(true)
   lastLoginAt   DateTime?
@@ -38,7 +42,7 @@ model Profile {
   bookings      Booking[]
   announcements Announcement[]
   testimonial   Testimonial?
-  aiFeedback    AIChatFeedback[]
+  chatFeedback  ChatFeedback[]
   userRoles     UserRole[]
 
   @@index([email])
@@ -128,9 +132,11 @@ model TempleInfo {
   priestCount     Int?
   dailyVisitors   Int?
 
-  // Logo
-  logoUrl    String?
-  faviconUrl String?
+  // Media - Logo and Favicon
+  logoId    String?
+  logo      Media?  @relation("TempleLogos", fields: [logoId], references: [id])
+  faviconId String?
+  favicon   Media?  @relation("TempleFavicons", fields: [faviconId], references: [id])
 
   // Audit fields
   createdAt DateTime @default(now())
@@ -166,17 +172,23 @@ model HomepageConfig {
   // Hero Section
   heroTitle               String?
   heroSubtitle            String?
-  heroImageUrl            String?
   heroVideoUrl            String?
   heroPrimaryButtonText   String?
   heroPrimaryButtonUrl    String?
   heroSecondaryButtonText String?
   heroSecondaryButtonUrl  String?
 
+  // Media - Hero Image
+  heroImageId String?
+  heroImage   Media?  @relation("HomepageHeroImages", fields: [heroImageId], references: [id])
+
   // About Section
-  aboutTitle    String?
-  aboutContent  String? @db.Text
-  aboutImageUrl String?
+  aboutTitle   String?
+  aboutContent String? @db.Text
+
+  // Media - About Image
+  aboutImageId String?
+  aboutImage   Media?  @relation("HomepageAboutImages", fields: [aboutImageId], references: [id])
 
   // Section Visibility
   showFeaturedEvents  Boolean @default(true)
@@ -208,8 +220,6 @@ model HomepageConfig {
   // Audit fields
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  media     Media?   @relation(fields: [mediaId], references: [id])
-  mediaId   String?
 
   @@map("homepage_configs")
 }
@@ -321,19 +331,52 @@ model Media {
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
-  // Relations
-  eventImages       Event[]            @relation("EventImages")
-  eventBanners      Event[]            @relation("EventBanners")
-  galleryItems      GalleryItem[]
-  aaradhaneImages   Aaradhane[]
-  aaradhaneThumbs   Aaradhane[]        @relation("AaradhaneThumbnails")
-  sevaimages        Seva[]             @relation("SevaImages")
-  donationImages    DonationCampaign[]
-  trustMemberImages TrustMember[]
-  staffImages       Staff[]
-  facilityImages    Facility[]
+  // Relations - Event
+  eventImages  Event[] @relation("EventImages")
+  eventBanners Event[] @relation("EventBanners")
+
+  // Relations - Aaradhane
+  aaradhaneImages Aaradhane[] @relation("AaradhaneImages")
+  aaradhaneThumbs Aaradhane[] @relation("AaradhaneThumbnails")
+
+  // Relations - Seva
+  sevaImages Seva[] @relation("SevaImages")
+
+  // Relations - Donation
+  donationImages DonationCampaign[] @relation("DonationImages")
+
+  // Relations - Committee
+  committeeImages CommitteeMember[] @relation("CommitteeImages")
+
+  // Relations - Gallery
+  galleryImages GalleryItem[]
+
+  // Relations - PoojaSchedule
+  poojaImages PoojaSchedule[]
+
+  // Relations - Facility
+  facilityImages Facility[]
+
+  // Relations - Testimonial
   testimonialImages Testimonial[]
-  homepageImages    HomepageConfig[]
+
+  // Relations - Homepage
+  homepageHeroImages  HomepageConfig[] @relation("HomepageHeroImages")
+  homepageAboutImages HomepageConfig[] @relation("HomepageAboutImages")
+
+  // Relations - Profile
+  profileAvatars Profile[] @relation("ProfileAvatars")
+
+  // Relations - Temple
+  templeLogos    TempleInfo[] @relation("TempleLogos")
+  templeFavicons TempleInfo[] @relation("TempleFavicons")
+
+  // Relations - Knowledge
+  articleImages   KnowledgeArticle[]    @relation("ArticleImages")
+  attachmentFiles KnowledgeAttachment[]
+
+  // Relations - Document
+  documentFiles Document[]
 
   @@index([type, isActive])
   @@index([category])
@@ -444,11 +487,12 @@ model Event {
   updatedById String?
 
   // Relations
-  bookings     BookingItem[]
+  bookingItems BookingItem[]
   galleryItems GalleryItem[]
 
   @@index([startDate, published])
   @@index([status])
+  @@index([type])
   @@map("events")
 }
 
@@ -559,7 +603,8 @@ model PoojaSchedule {
   isSpecial Boolean @default(false)
 
   // Media
-  imageUrl String?
+  imageId String?
+  image   Media?  @relation(fields: [imageId], references: [id])
 
   active Boolean @default(true)
   order  Int     @default(0)
@@ -570,6 +615,7 @@ model PoojaSchedule {
   deletedAt DateTime?
 
   @@index([active, order])
+  @@index([category])
   @@map("pooja_schedules")
 }
 
@@ -601,10 +647,10 @@ model Booking {
   // Status
   status BookingStatus @default(PENDING)
 
-  // Financial
-  totalAmount Float  @default(0)
-  currency    String @default("INR")
-  paidAmount  Float  @default(0)
+  // Financial - using Decimal for monetary values
+  totalAmount Decimal @default(0) @db.Decimal(12, 2)
+  currency    String  @default("INR")
+  paidAmount  Decimal @default(0) @db.Decimal(12, 2)
 
   // Devotee Info (for religious bookings)
   devoteeName String?
@@ -656,18 +702,19 @@ model BookingItem {
   id        String @id @default(uuid())
   bookingId String
 
-  // Reference to the booked entity
-  itemType BookingItemType
-  itemId   String // ID of Seva, Event, etc.
+  // Explicit foreign keys instead of polymorphic itemType/itemId
+  sevaId      String?
+  aaradhaneId String?
+  eventId     String?
 
   // Item Details (denormalized for historical record)
   itemName   String
   itemNameKn String?
 
-  // Quantity and Price
-  quantity   Int   @default(1)
-  unitPrice  Float @default(0)
-  totalPrice Float @default(0)
+  // Quantity and Price - using Decimal for monetary values
+  quantity   Int     @default(1)
+  unitPrice  Decimal @default(0) @db.Decimal(12, 2)
+  totalPrice Decimal @default(0) @db.Decimal(12, 2)
 
   // Date/Time
   requestedDate DateTime?
@@ -683,22 +730,17 @@ model BookingItem {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  event   Event?  @relation(fields: [eventId], references: [id])
-  eventId String?
+  // Relations
+  booking   Booking    @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  seva      Seva?      @relation(fields: [sevaId], references: [id])
+  aaradhane Aaradhane? @relation(fields: [aaradhaneId], references: [id])
+  event     Event?     @relation(fields: [eventId], references: [id])
 
   @@index([bookingId])
-  @@index([itemType, itemId])
+  @@index([sevaId])
+  @@index([aaradhaneId])
+  @@index([eventId])
   @@map("booking_items")
-}
-
-enum BookingItemType {
-  SEVA
-  SEVA_BOOKING
-  EVENT
-  EVENT_BOOKING
-  DONATION
-  OTHER
 }
 
 // =============================================================================
@@ -714,8 +756,9 @@ model Seva {
   description   String? @db.Text
   descriptionKn String? @db.Text
 
-  price    Float  @default(0)
-  currency String @default("INR")
+  // Monetary - using Decimal
+  price    Decimal @default(0) @db.Decimal(12, 2)
+  currency String  @default("INR")
 
   duration String? // e.g., "30 minutes", "1 hour"
 
@@ -744,6 +787,7 @@ model Seva {
   deletedAt DateTime?
 
   // Relations
+  bookingItems   BookingItem[]
   aaradhaneSevas AaradhaneSeva[]
 
   @@index([active, featured])
@@ -773,7 +817,7 @@ model Aaradhane {
 
   // Media
   imageId     String?
-  image       Media?  @relation(fields: [imageId], references: [id])
+  image       Media?  @relation("AaradhaneImages", fields: [imageId], references: [id])
   thumbnailId String?
   thumbnail   Media?  @relation("AaradhaneThumbnails", fields: [thumbnailId], references: [id])
 
@@ -789,7 +833,9 @@ model Aaradhane {
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
-  sevas AaradhaneSeva[]
+  // Relations
+  bookingItems BookingItem[]
+  sevas        AaradhaneSeva[]
 
   @@index([featured, active])
   @@map("aaradhanes")
@@ -804,8 +850,9 @@ model AaradhaneSeva {
   nameKn      String?
   description String? @db.Text
 
-  amount   Float  @default(0)
-  currency String @default("INR")
+  // Monetary - using Decimal
+  amount   Decimal @default(0) @db.Decimal(12, 2)
+  currency String  @default("INR")
 
   active Boolean @default(true)
   order  Int     @default(0)
@@ -835,13 +882,14 @@ model DonationCampaign {
   description   String? @db.Text
   descriptionKn String? @db.Text
 
-  targetAmount Float?
-  raisedAmount Float  @default(0)
-  currency     String @default("INR")
+  // Monetary - using Decimal
+  targetAmount Decimal? @db.Decimal(12, 2)
+  raisedAmount Decimal  @default(0) @db.Decimal(12, 2)
+  currency     String   @default("INR")
 
   // Media
   imageId  String?
-  image    Media?  @relation(fields: [imageId], references: [id])
+  image    Media?  @relation("DonationImages", fields: [imageId], references: [id])
   videoUrl String?
 
   active   Boolean @default(true)
@@ -865,6 +913,7 @@ model DonationCampaign {
   donations Donation[]
 
   @@index([active, featured])
+  @@index([urgencyLevel])
   @@map("donation_campaigns")
 }
 
@@ -887,9 +936,9 @@ model Donation {
   campaignId String?
   campaign   DonationCampaign? @relation(fields: [campaignId], references: [id])
 
-  // Amount
-  amount   Float
-  currency String @default("INR")
+  // Monetary - using Decimal
+  amount   Decimal @db.Decimal(12, 2)
+  currency String  @default("INR")
 
   // Payment
   paymentMethod PaymentMethod?
@@ -921,7 +970,8 @@ model Donation {
 
   @@index([profileId])
   @@index([campaignId])
-  @@index([status, createdAt])
+  @@index([status])
+  @@index([createdAt])
   @@map("donations")
 }
 
@@ -948,8 +998,9 @@ model DonationPayment {
   id         String @id @default(uuid())
   donationId String
 
-  amount   Float
-  currency String @default("INR")
+  // Monetary - using Decimal
+  amount   Decimal @db.Decimal(12, 2)
+  currency String  @default("INR")
 
   paymentMethod PaymentMethod
   paymentId     String?
@@ -966,6 +1017,7 @@ model DonationPayment {
   donation Donation @relation(fields: [donationId], references: [id], onDelete: Cascade)
 
   @@index([donationId])
+  @@index([status])
   @@map("donation_payments")
 }
 
@@ -1019,8 +1071,8 @@ model GalleryItem {
 // COMMITTEE & STAFF
 // =============================================================================
 
-/// Trust/Committee Members
-model TrustMember {
+/// Committee/Members (renamed from TrustMember)
+model CommitteeMember {
   id String @id @default(uuid())
 
   name          String
@@ -1033,7 +1085,7 @@ model TrustMember {
 
   // Media
   imageId String?
-  image   Media?  @relation(fields: [imageId], references: [id])
+  image   Media?  @relation("CommitteeImages", fields: [imageId], references: [id])
 
   email String?
   phone String?
@@ -1052,7 +1104,7 @@ model TrustMember {
   deletedAt DateTime?
 
   @@index([type, active])
-  @@map("trust_members")
+  @@map("committee_members")
 }
 
 enum MemberType {
@@ -1062,34 +1114,6 @@ enum MemberType {
   SECRETARY
   STAFF
   PRIEST
-}
-
-/// Temple Staff
-model Staff {
-  id String @id @default(uuid())
-
-  name        String
-  designation String
-  department  String?
-
-  // Media
-  imageId String?
-  image   Media?  @relation(fields: [imageId], references: [id])
-
-  bio String? @db.Text
-
-  phone String?
-  email String?
-
-  active Boolean @default(true)
-  order  Int     @default(0)
-
-  // Audit fields
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
-
-  @@map("staff")
 }
 
 // =============================================================================
@@ -1142,58 +1166,17 @@ model Amenity {
   @@map("amenities")
 }
 
-/// Future Plans
-model FuturePlan {
-  id String @id @default(uuid())
-
-  title         String
-  titleKn       String?
-  description   String? @db.Text
-  descriptionKn String? @db.Text
-
-  icon     String?
-  imageUrl String?
-
-  targetAmount Float?
-  raisedAmount Float  @default(0)
-
-  status   PlanStatus @default(PLANNING)
-  priority Int        @default(0)
-
-  active   Boolean @default(true)
-  featured Boolean @default(false)
-  order    Int     @default(0)
-
-  startDate     DateTime?
-  targetDate    DateTime?
-  completedDate DateTime?
-
-  // Audit fields
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
-
-  @@map("future_plans")
-}
-
-enum PlanStatus {
-  PLANNING
-  APPROVED
-  IN_PROGRESS
-  COMPLETED
-  ON_HOLD
-}
-
 // =============================================================================
-// AI KNOWLEDGE BASE
+// KNOWLEDGE BASE (Renamed from AI Knowledge)
 // =============================================================================
 
-/// AI Chatbot Knowledge Categories
-model AIKnowledgeCategory {
+/// Knowledge Categories
+model KnowledgeCategory {
   id String @id @default(uuid())
 
   name        String
   description String?
+  slug        String  @unique
 
   icon  String?
   color String?
@@ -1205,13 +1188,15 @@ model AIKnowledgeCategory {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  articles AIKnowledgeArticle[]
+  // Relations
+  articles KnowledgeArticle[]
 
-  @@map("ai_knowledge_categories")
+  @@index([active])
+  @@map("knowledge_categories")
 }
 
-/// AI Chatbot Knowledge Articles
-model AIKnowledgeArticle {
+/// Knowledge Articles
+model KnowledgeArticle {
   id         String @id @default(uuid())
   categoryId String
 
@@ -1226,23 +1211,92 @@ model AIKnowledgeArticle {
   priority Int     @default(0)
   active   Boolean @default(true)
 
+  // Media - Featured Image
+  imageId String?
+  image   Media?  @relation("ArticleImages", fields: [imageId], references: [id])
+
   viewCount       Int @default(0)
   helpfulCount    Int @default(0)
   notHelpfulCount Int @default(0)
 
   // Audit fields
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  // Relations
+  category    KnowledgeCategory     @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  attachments KnowledgeAttachment[]
+  articleTags ArticleTag[]
+  feedback    ChatFeedback[]
+
+  @@index([active, priority])
+  @@index([categoryId])
+  @@map("knowledge_articles")
+}
+
+/// Knowledge Attachments (files associated with articles)
+model KnowledgeAttachment {
+  id        String @id @default(uuid())
+  articleId String
+
+  title       String
+  description String?
+
+  // Media - File
+  mediaId String
+  media   Media  @relation(fields: [mediaId], references: [id])
+
+  fileSize Int? // bytes
+  mimeType String?
+
+  order  Int     @default(0)
+  active Boolean @default(true)
+
+  // Audit fields
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  category AIKnowledgeCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  feedback AIChatFeedback[]
+  article KnowledgeArticle @relation(fields: [articleId], references: [id], onDelete: Cascade)
 
-  @@index([active, priority])
-  @@map("ai_knowledge_articles")
+  @@index([articleId])
+  @@map("knowledge_attachments")
 }
 
-/// AI Chat Feedback
-model AIChatFeedback {
+/// Knowledge Tags
+model KnowledgeTag {
+  id          String  @id @default(uuid())
+  name        String  @unique
+  slug        String  @unique
+  description String?
+
+  // Audit fields
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  articleTags ArticleTag[]
+
+  @@map("knowledge_tags")
+}
+
+/// Article-Tag junction table
+model ArticleTag {
+  id        String @id @default(uuid())
+  articleId String
+  tagId     String
+
+  createdAt DateTime @default(now())
+
+  article KnowledgeArticle @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  tag     KnowledgeTag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([articleId, tagId])
+  @@map("article_tags")
+}
+
+/// Chat Feedback (renamed from AIChatFeedback)
+model ChatFeedback {
   id String @id @default(uuid())
 
   articleId String?
@@ -1258,10 +1312,10 @@ model AIChatFeedback {
 
   createdAt DateTime @default(now())
 
-  article AIKnowledgeArticle? @relation(fields: [articleId], references: [id])
-  user    Profile?            @relation(fields: [userId], references: [id])
+  article KnowledgeArticle? @relation(fields: [articleId], references: [id])
+  user    Profile?          @relation(fields: [userId], references: [id])
 
-  @@map("ai_chat_feedback")
+  @@map("chat_feedback")
 }
 
 // =============================================================================
@@ -1301,6 +1355,7 @@ model Testimonial {
   deletedAt DateTime?
 
   @@index([approved, published])
+  @@index([featured])
   @@map("testimonials")
 }
 
@@ -1334,6 +1389,7 @@ model ContactEnquiry {
   deletedAt DateTime?
 
   @@index([status])
+  @@index([category])
   @@map("contact_enquiries")
 }
 
@@ -1358,35 +1414,6 @@ enum EnquiryStatus {
 // =============================================================================
 // UTILITY MODELS
 // =============================================================================
-
-/// Email Logs
-model EmailLog {
-  id String @id @default(uuid())
-
-  to      String
-  subject String
-  body    String @db.Text
-
-  status       EmailStatus @default(PENDING)
-  sentAt       DateTime?
-  failedAt     DateTime?
-  errorMessage String?
-
-  templateId   String?
-  templateData Json?
-
-  createdAt DateTime @default(now())
-
-  @@index([to, createdAt])
-  @@map("email_logs")
-}
-
-enum EmailStatus {
-  PENDING
-  SENT
-  FAILED
-  BOUNCED
-}
 
 /// Audit Log
 model AuditLog {
@@ -1448,7 +1475,11 @@ model Document {
   categoryId String
   category   DocumentCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 
-  fileUrl  String
+  // Media - File
+  mediaId String
+  media   Media  @relation(fields: [mediaId], references: [id])
+
+  // File metadata (denormalized)
   fileName String?
   fileSize Int? // bytes
   mimeType String?
