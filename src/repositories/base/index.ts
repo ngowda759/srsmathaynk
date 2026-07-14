@@ -6,38 +6,40 @@
  * 
  * Usage:
  * ```typescript
+ * import { BaseRepository } from "@/repositories/base";
+ * import { prisma } from "@/lib/db";
+ * 
  * class AnnouncementRepository extends BaseRepository<Announcement> {
  *   constructor() {
  *     super(prisma.announcement);
+ *   }
+ * 
+ *   protected getModelName(): string {
+ *     return "Announcement";
  *   }
  * }
  * ```
  */
 
-import { Prisma, PrismaClient, BasePrismaClient } from "@/lib/db";
+import { prisma, BasePrismaClient } from "@/lib/db";
 import { logger } from "@/lib/logger";
 import {
   NotFoundError,
   ConflictError,
   DatabaseError,
 } from "@/errors";
-import {
-  normalizePagination,
-  calculatePaginationMeta,
-  createPaginatedResult,
-  buildFilters,
-  buildComplexFilter,
-  buildSorts,
-} from "@/lib/pagination";
-import { buildFilters as buildFilterConditions, activeFilter } from "@/lib/filter";
-import { buildSorts as buildSortOptions } from "@/lib/sorting";
+import { normalizePagination, calculatePaginationMeta, createPaginatedResult } from "@/lib/pagination";
+import { activeFilter } from "@/lib/filter";
+import { buildSortOptions } from "@/lib/sorting";
 import type {
   PaginationOptions,
   PaginatedResult,
   FilterOptions,
-  SortOptions,
   QueryOptions,
 } from "@/types";
+
+// Re-export the repository type
+export type { BasePrismaClient };
 
 // ============================================================================
 // Base Repository Class
@@ -329,7 +331,7 @@ export abstract class BaseRepository<T extends { id: string }> {
 
     if (filters && filters.length > 0) {
       for (const filter of filters) {
-        conditions.push(buildComplexFilter(filter));
+        conditions.push(this.buildComplexFilter(filter));
       }
     }
 
@@ -338,6 +340,44 @@ export abstract class BaseRepository<T extends { id: string }> {
     }
 
     return { AND: conditions };
+  }
+
+  /**
+   * Build a complex filter condition
+   */
+  protected buildComplexFilter(filter: FilterOptions): Record<string, unknown> {
+    const { field, operator, value } = filter;
+
+    switch (operator) {
+      case "eq":
+        return { [field]: value };
+      case "ne":
+        return { [field]: { not: value } };
+      case "gt":
+        return { [field]: { gt: value } };
+      case "gte":
+        return { [field]: { gte: value } };
+      case "lt":
+        return { [field]: { lt: value } };
+      case "lte":
+        return { [field]: { lte: value } };
+      case "contains":
+        return { [field]: { contains: value, mode: "insensitive" } };
+      case "startsWith":
+        return { [field]: { startsWith: value, mode: "insensitive" } };
+      case "endsWith":
+        return { [field]: { endsWith: value, mode: "insensitive" } };
+      case "in":
+        return { [field]: { in: value } };
+      case "notIn":
+        return { [field]: { notIn: value } };
+      case "isNull":
+        return { [field]: null };
+      case "isNotNull":
+        return { [field]: { not: null } };
+      default:
+        return { [field]: value };
+    }
   }
 
   /**
@@ -364,96 +404,4 @@ export abstract class BaseRepository<T extends { id: string }> {
     }
     return false;
   }
-}
-
-// ============================================================================
-// Repository Factory
-// ============================================================================
-
-export type RepositoryModel =
-  | "announcement"
-  | "booking"
-  | "bookingItem"
-  | "committeeMember"
-  | "contactEnquiry"
-  | "donation"
-  | "donationCampaign"
-  | "document"
-  | "documentCategory"
-  | "event"
-  | "facility"
-  | "festival"
-  | "galleryItem"
-  | "media"
-  | "panchanga"
-  | "poojaSchedule"
-  | "profile"
-  | "role"
-  | "seva"
-  | "siteSetting"
-  | "templeDay"
-  | "templeException"
-  | "templeInfo"
-  | "testimonial"
-  | "userRole"
-  | "chatFeedback"
-  | "aaradhane"
-  | "aaradhaneSeva"
-  | "knowledgeArticle"
-  | "knowledgeAttachment"
-  | "knowledgeCategory"
-  | "articleTag"
-  | "knowledgeTag"
-  | "auditLog";
-
-export interface RepositoryRegistry {
-  announcement: any;
-  booking: any;
-  bookingItem: any;
-  committeeMember: any;
-  contactEnquiry: any;
-  donation: any;
-  donationCampaign: any;
-  document: any;
-  documentCategory: any;
-  event: any;
-  facility: any;
-  festival: any;
-  galleryItem: any;
-  media: any;
-  panchanga: any;
-  poojaSchedule: any;
-  profile: any;
-  role: any;
-  seva: any;
-  siteSetting: any;
-  templeDay: any;
-  templeException: any;
-  templeInfo: any;
-  testimonial: any;
-  userRole: any;
-  chatFeedback: any;
-  aaradhane: any;
-  aaradhaneSeva: any;
-  knowledgeArticle: any;
-  knowledgeAttachment: any;
-  knowledgeCategory: any;
-  articleTag: any;
-  knowledgeTag: any;
-  auditLog: any;
-}
-
-export function getRepository<T extends { id: string }>(
-  prisma: PrismaClient,
-  modelName: RepositoryModel
-): BaseRepository<T> {
-  // This is a factory that returns a configured repository
-  // Subclasses should extend BaseRepository and implement getModelName()
-  const model = (prisma as any)[modelName];
-  
-  return new (class extends BaseRepository<T> {
-    protected getModelName(): string {
-      return modelName;
-    }
-  })(model);
 }

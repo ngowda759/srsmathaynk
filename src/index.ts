@@ -5,7 +5,7 @@
  * 
  * Architecture (per ADR-001):
  * 
- * UI → Server Actions / Route Handlers → Service Layer → Repository Layer → Prisma ORM
+ * UI → Server Actions / Route Handlers → Service Layer → Repository Layer → Mapper → Prisma ORM
  * 
  * This module exports all core infrastructure components.
  * 
@@ -30,8 +30,12 @@ export * from "./lib/search";
 // - UI never communicates directly with Prisma
 // - Business logic exists only inside Services
 // - Database access exists only inside Repositories
+// - Mappers convert Prisma objects to domain objects
 export { BaseRepository } from "./repositories";
 export { BaseService, compose, chain, mapResults, withErrorHandling } from "./services";
+
+// Mappers (Domain objects)
+export * from "./mappers";
 
 // Validation (per ADR-017)
 export * from "./validators";
@@ -44,16 +48,15 @@ export * from "./middleware";
 // In a route handler:
 //
 // import { withAuth, withAuthz, withErrorHandler, withApiRateLimit } from "@/middleware";
-// import { validators } from "@/validators";
 // import { BaseService } from "@/services";
-// import { BaseRepository } from "@/repositories";
+// import { AnnouncementRepository, announcementMapper } from "@/repositories";
 // import { logger } from "@/lib/logger";
 // import { SearchBuilder } from "@/lib/search";
 // import { executeWithRetry } from "@/lib/transaction";
 // import { ErrorCodes } from "@/errors";
 //
 // class AnnouncementService extends BaseService {
-//   constructor(private repo: IAnnouncementRepository) {
+//   constructor(private repo: AnnouncementRepository) {
 //     super("Announcement");
 //   }
 //
@@ -64,12 +67,15 @@ export * from "./middleware";
 //       .contains("title", params.search || "")
 //       .equals("isActive", true);
 //     
-//     const result = await this.repo.findAll({
+//     const prismaRecords = await this.repo.findAll({
 //       where: builder.build(),
 //       pagination: { page: params.page, limit: params.limit }
 //     });
 //     
-//     return this.success(result);
+//     // Convert to domain objects via mapper
+//     const announcements = announcementMapper.toDomainList(prismaRecords);
+//     
+//     return this.success(announcements);
 //   }
 // }
 //
@@ -79,7 +85,7 @@ export * from "./middleware";
 //       withAuthz({ roles: ["ADMIN", "SUPER_ADMIN"] })(
 //         async (req, { user }) => {
 //           const params = parseQueryParams(req);
-//           const service = new AnnouncementService(new PrismaAnnouncementRepository());
+//           const service = new AnnouncementService(new AnnouncementRepository());
 //           return service.getAll(params);
 //         }
 //       )

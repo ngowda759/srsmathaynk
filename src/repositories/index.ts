@@ -1,41 +1,57 @@
 /**
  * Repository Layer
  * 
- * All database access MUST go through repositories per ADR-001.
- * This module exports all repositories for the application.
+ * Feature-oriented repository structure per ADR-001.
+ * All database access MUST go through repositories.
+ * 
+ * Pattern:
+ * Prisma Model → Repository → Mapper → Domain Object
+ * 
+ * Folder Structure:
+ * repositories/
+ * ├── base/
+ * │   ├── base.repository.ts   # Generic CRUD
+ * │   └── index.ts
+ * ├── announcement/
+ * │   └── index.ts             # AnnouncementRepository
+ * ├── booking/
+ * ├── donation/
+ * ├── event/
+ * ├── media/
+ * ├── profile/
+ * ├── seva/
+ * └── index.ts                 # Exports all repositories
  * 
  * Usage:
  * ```typescript
- * import { AnnouncementRepository, ProfileRepository } from "@/repositories";
+ * import { AnnouncementRepository, profileRepository } from "@/repositories";
  * 
  * const announcementRepo = new AnnouncementRepository();
- * const announcements = await announcementRepo.findAll();
+ * const announcements = await announcementRepo.findActive();
  * ```
  */
 
-// Re-export BaseRepository
-export { BaseRepository } from "./base.repository";
+// Base repository
+export { BaseRepository } from "./base";
+export type { BasePrismaClient } from "./base";
 
-// Individual repositories should be created as needed:
-// 
-// Example:
-// 
-// import { BaseRepository } from "./base.repository";
-// import { prisma } from "@/lib/db";
-// 
-// export class AnnouncementRepository extends BaseRepository<Announcement> {
-//   constructor() {
-//     super(prisma.announcement);
-//   }
-// 
-//   protected getModelName(): string {
-//     return "Announcement";
-//   }
-// 
-//   // Custom methods specific to announcements
-//   async findActiveAnnouncements() {
-//     return this.findAll({
-//       filters: [{ field: "isActive", operator: "eq", value: true }]
-//     });
-//   }
-// }
+// Announcement repository
+export { AnnouncementRepository, announcementRepository } from "./announcement";
+
+// Booking repository
+export { BookingRepository, bookingRepository } from "./booking";
+
+// Donation repository
+export { DonationRepository, donationRepository } from "./donation";
+
+// Event repository
+export { EventRepository, eventRepository } from "./event";
+
+// Media repository
+export { MediaRepository, mediaRepository } from "./media";
+
+// Profile repository
+export { ProfileRepository, profileRepository } from "./profile";
+
+// Seva repository
+export { SevaRepository, sevaRepository } from "./seva";
