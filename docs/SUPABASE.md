@@ -125,10 +125,29 @@ Configure allowed redirect URLs in **Authentication** → **URL Configuration**:
 
 ## Row Level Security (RLS)
 
-The database uses PostgreSQL Row Level Security. Sample policies:
+### Option 1: Use SQL Scripts (Recommended)
 
-### Profiles Table
+We've provided SQL scripts to set up RLS policies:
+
+1. **RLS Policies** (`prisma/rls-policies.sql`):
+   ```bash
+   # Copy and run in Supabase SQL Editor
+   # This enables RLS and creates all policies
+   ```
+
+2. **Storage Buckets** (`prisma/storage-buckets.sql`):
+   ```bash
+   # Copy and run in Supabase SQL Editor
+   # This creates buckets and their policies
+   ```
+
+### Option 2: Manual Configuration
+
+#### Profiles Table
 ```sql
+-- Enable RLS
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+
 -- Users can read their own profile
 CREATE POLICY "Users can view own profile" ON profiles
   FOR SELECT USING (auth.uid() = user_id);
@@ -138,12 +157,35 @@ CREATE POLICY "Users can update own profile" ON profiles
   FOR UPDATE USING (auth.uid() = user_id);
 ```
 
-### Gallery Images
+#### Gallery Images
 ```sql
 -- Anyone can view active gallery images
 CREATE POLICY "Public can view active images" ON gallery_images
   FOR SELECT USING (active = true);
+
+-- Admins can manage gallery
+CREATE POLICY "Admins can manage gallery" ON gallery_images
+  FOR ALL USING (
+    EXISTS (
+      SELECT 1 FROM profiles p
+      WHERE p.user_id = auth.uid()
+      AND p.role IN ('ADMIN', 'SUPER_ADMIN')
+    )
+  );
 ```
+
+### Policy Overview
+
+| Table | Public Read | Authenticated | Admin Only |
+|-------|-------------|---------------|------------|
+| profiles | ❌ | Own profile | All profiles |
+| events | Published only | ✅ | Full access |
+| sevas | Active only | ✅ | Full access |
+| seva_bookings | ❌ | Own bookings | All bookings |
+| donations | ❌ | Own + public | All + billing |
+| gallery_images | Active only | ✅ | Full access |
+| announcements | Active only | ✅ | Full access |
+| settings | ✅ | ✅ | Full access |
 
 ---
 
@@ -168,12 +210,25 @@ npm run db:seed
 
 ---
 
+## Quick Setup Checklist
+
+- [ ] Get Supabase credentials
+- [ ] Update `.env` with credentials
+- [ ] Run `npm run db:push`
+- [ ] Run RLS policies (`prisma/rls-policies.sql`)
+- [ ] Run storage setup (`prisma/storage-buckets.sql`)
+- [ ] Run `npm run db:seed`
+- [ ] Test authentication
+- [ ] Configure redirect URLs in Supabase Auth settings
+
+---
+
 ## Next Steps
 
 1. ✅ Set up Supabase project
 2. ✅ Configure environment variables
 3. ✅ Push database schema
-4. ⬜ Create storage buckets
-5. ⬜ Configure RLS policies
+4. ✅ Create storage buckets
+5. ✅ Configure RLS policies
 6. ⬜ Test authentication
 7. ⬜ Integrate services with database
