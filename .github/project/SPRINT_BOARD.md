@@ -1,28 +1,78 @@
 # Sri Raghavendra Swamy Matha Portal - Project Board
 
-## Sprint 2.x Kanban Board
+## Sprint 3.x Kanban Board
 
 | 📋 Backlog | 🟡 Sprint In Progress | 👀 Review | 🧪 Testing | ✅ Done |
 |------------|----------------------|-----------|------------|--------|
+| Sprint 3.1 (Core Infrastructure) | | | | |
 | | | | | |
+
+---
+
+## Sprint 3.1 - Core Infrastructure ✅
+
+### ✅ Completed
+- [x] Types (Pagination, Filter, Sorting, ServiceResult)
+- [x] Errors (AppError hierarchy)
+- [x] Logger (Structured JSON logging)
+- [x] Transaction Helper
+- [x] Utilities (pagination, filter, sorting, response, constants)
+- [x] Repository Layer (BaseRepository with CRUD)
+- [x] Service Layer (BaseService with ServiceResult pattern)
+- [x] Validators (Zod schemas)
+- [x] Middleware (Auth, Authz, Error handling)
+
+### 📁 Files Created
+```
+src/
+├── types/index.ts
+├── errors/index.ts
+├── lib/
+│   ├── logger.ts
+│   ├── pagination.ts
+│   ├── filter.ts
+│   ├── sorting.ts
+│   ├── response.ts
+│   ├── transaction.ts
+│   └── constants.ts
+├── repositories/
+│   ├── base.repository.ts
+│   └── index.ts
+├── services/
+│   ├── base.service.ts
+│   └── index.ts
+├── validators/index.ts
+├── middleware/index.ts
+└── index.ts
+```
+
+---
+
+## Sprint 2.4 - Database Setup ✅
+
+### ✅ Completed
+- [x] Initial migration created (37 tables, 14 enums)
+- [x] Seed script implemented
+- [x] Database documentation
+- [x] Engineering principles
+- [x] Sprint board created
 
 ---
 
 ## Quick Commands
 
-### Apply Migration
 ```bash
+# Apply migration
 npm run db:migrate:deploy
-```
 
-### Seed Database
-```bash
+# Seed database
 npm run db:seed
-```
 
-### Check Status
-```bash
+# Check status
 npx prisma migrate status
+
+# Validate schema
+npx prisma validate
 ```
 
 ---
@@ -46,22 +96,27 @@ If implementation reveals an architectural issue:
 
 ---
 
-## Sprint 2.4 - Current Status
+## Architecture (per ADR-001)
 
-### ✅ Completed
-- [x] Initial migration created
-- [x] Seed script implemented
-- [x] Database documentation
-- [x] Engineering principles
+```
+UI → Server Actions / Route Handlers → Service Layer → Repository Layer → Prisma ORM
+```
 
-### 🔄 In Progress
-- [ ] Apply migration to Supabase
-- [ ] Run seed
-- [ ] Verify build
+**Rules:**
+- ✅ UI never communicates directly with Prisma
+- ✅ Business logic exists only inside Services
+- ✅ Database access exists only inside Repositories
+- ✅ All input validation uses Zod
 
-### 📋 To Do
-- [ ] Fix Supabase SSR build issue
-- [ ] Implement next feature
+---
+
+## Next Sprints
+
+### 📋 Backlog
+- Sprint 4: Authentication (Supabase Auth integration)
+- Sprint 5: Announcement CRUD
+- Sprint 6: Seva Management
+- Sprint 7: Booking System
 
 ---
 
