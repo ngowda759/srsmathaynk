@@ -1,6 +1,6 @@
 # Rayara Math Temple Portal
 
-A modern, responsive temple management portal built using **Next.js**, **TypeScript**, and **Tailwind CSS**. The application provides devotees with an easy way to explore temple information, book sevas, make donations, view events, and allows administrators to efficiently manage temple operations.
+A modern, responsive temple management portal built using **Next.js**, **TypeScript**, **Tailwind CSS**, and **Supabase**. The application provides devotees with an easy way to explore temple information, book sevas, make donations, view events, and allows administrators to efficiently manage temple operations.
 
 ----
 
@@ -42,7 +42,8 @@ A modern, responsive temple management portal built using **Next.js**, **TypeScr
 
 ### Backend
 
-* Backend services (to be configured)
+* Supabase (PostgreSQL, Auth, Storage)
+* Prisma ORM
 
 ### Deployment
 
@@ -219,6 +220,7 @@ Built with:
 * React
 * TypeScript
 * Tailwind CSS
+* Supabase
 
 ---
 

@@ -1,0 +1,348 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User Profile - linked to Supabase Auth
+model Profile {
+  id            String    @id @default(cuid())
+  userId        String    @unique // Links to Supabase Auth user ID
+  email         String    @unique
+  name          String?
+  role          UserRole  @default(USER)
+  phone         String?
+  address       String?
+  avatarUrl     String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  donations     Donation[]
+  sevaBookings  SevaBooking[]
+  announcements Announcement[]
+
+  @@map("profiles")
+}
+
+enum UserRole {
+  USER
+  PRIEST
+  ADMIN
+  SUPER_ADMIN
+}
+
+// Temple Event
+model Event {
+  id          String      @id @default(cuid())
+  title       String
+  description String?
+  location    String?
+  startDate   DateTime
+  endDate     DateTime
+  status      EventStatus @default(UPCOMING)
+  featured    Boolean     @default(false)
+  published   Boolean     @default(false)
+  imageUrl    String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@map("events")
+}
+
+enum EventStatus {
+  UPCOMING
+  ONGOING
+  COMPLETED
+}
+
+// Seva (Service) Types
+model Seva {
+  id           String   @id @default(cuid())
+  name         String
+  nameKannada  String?
+  description  String?
+  descriptionKannada String?
+  price        Float    @default(0)
+  duration     String?  // e.g., "30 minutes", "1 hour"
+  category     String?
+  imageUrl     String?
+  active       Boolean  @default(true)
+  maxPerDay    Int?     // Maximum bookings per day
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  bookings     SevaBooking[]
+
+  @@map("sevas")
+}
+
+// Seva Bookings
+model SevaBooking {
+  id           String        @id @default(cuid())
+  userId       String
+  sevaId       String
+  bookingDate  DateTime
+  status       BookingStatus @default(CONFIRMED)
+  notes        String?
+  amount       Float
+  paymentId    String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  profile      Profile       @relation(fields: [userId], references: [id])
+  seva         Seva          @relation(fields: [sevaId], references: [id])
+
+  @@map("seva_bookings")
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+}
+
+// Donation Campaigns
+model DonationCampaign {
+  id           String   @id @default(cuid())
+  title        String
+  titleKannada String?
+  description  String?
+  descriptionKannada String?
+  targetAmount Float?
+  raisedAmount Float    @default(0)
+  active       Boolean  @default(true)
+  imageUrl     String?
+  startDate    DateTime?
+  endDate      DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  donations    Donation[]
+
+  @@map("donation_campaigns")
+}
+
+// Donations
+model Donation {
+  id           String           @id @default(cuid())
+  userId       String
+  campaignId   String?
+  amount       Float
+  currency     String           @default("INR")
+  paymentMethod String?
+  paymentId    String?
+  status       DonationStatus   @default(PENDING)
+  donorName    String?
+  donorEmail   String?
+  message      String?
+  anonymous    Boolean         @default(false)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  profile      Profile         @relation(fields: [userId], references: [id])
+  campaign     DonationCampaign? @relation(fields: [campaignId], references: [id])
+
+  @@map("donations")
+}
+
+enum DonationStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+// Gallery Images
+model GalleryImage {
+  id          String   @id @default(cuid())
+  title       String?
+  titleKannada String?
+  description String?
+  src         String   // Storage URL or local path
+  type        MediaType @default(IMAGE)
+  category    String?  // e.g., "temple", "events", "festivals"
+  featured    Boolean  @default(false)
+  active      Boolean  @default(true)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("gallery_images")
+}
+
+enum MediaType {
+  IMAGE
+  VIDEO
+}
+
+// Announcements
+model Announcement {
+  id        String   @id @default(cuid())
+  title     String
+  content   String
+  type      AnnouncementType @default(GENERAL)
+  priority  Priority @default(NORMAL)
+  active    Boolean  @default(true)
+  expiresAt DateTime?
+  authorId  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  author    Profile?  @relation(fields: [authorId], references: [id])
+
+  @@map("announcements")
+}
+
+enum AnnouncementType {
+  GENERAL
+  EVENT
+  DONATION
+  FESTIVAL
+  MAINTENANCE
+}
+
+enum Priority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+// Homepage Settings
+model HomepageSettings {
+  id             String  @id @default(cuid())
+  heroTitle      String  @default("Welcome to Sri Raghavendra Swamy Mutt")
+  heroSubtitle   String?
+  heroImageUrl   String?
+  aboutTitle     String?
+  aboutContent   String?
+  featuredEvents Boolean @default(true)
+  featuredSevas  Boolean @default(true)
+  updatedAt      DateTime @updatedAt
+
+  @@map("homepage_settings")
+}
+
+// Temple Settings
+model TempleSettings {
+  id              String @id @default(cuid())
+  templeName      String @default("Sri Raghavendra Swamy Mutt")
+  address         String?
+  city            String?
+  state           String?
+  pincode         String?
+  phone           String?
+  email           String?
+  mapEmbedUrl     String?
+  updatedAt       DateTime @updatedAt
+
+  @@map("temple_settings")
+}
+
+// Trust Committee Members
+model TrustMember {
+  id           String   @id @default(cuid())
+  name         String
+  nameKannada  String?
+  designation  String
+  designationKannada String?
+  bio          String?
+  bioKannada   String?
+  imageUrl     String?
+  order        Int      @default(0)
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("trust_members")
+}
+
+// Future Plans
+model FuturePlan {
+  id               String   @id @default(cuid())
+  title            String
+  titleKannada     String?
+  description      String?
+  descriptionKannada String?
+  icon            String?
+  isActive        Boolean  @default(true)
+  order           Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("future_plans")
+}
+
+// Facilities
+model Facility {
+  id          String  @id @default(cuid())
+  title       String
+  titleKannada String?
+  description String?
+  descriptionKannada String?
+  icon        String?
+  color       String?
+  isActive    Boolean @default(true)
+  order       Int     @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("facilities")
+}
+
+// Panchanga (Calendar Data)
+model Panchanga {
+  id          String   @id @default(cuid())
+  date        DateTime @unique
+  tithi       String
+  nakshatra   String
+  yoga        String
+  karana      String
+  sunrise     String
+  sunset      String
+  moonrise    String?
+  moonset     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("panchangas")
+}
+
+// Pooja Schedule
+model PoojaSchedule {
+  id          String   @id @default(cuid())
+  name        String
+  nameKannada String?
+  time        String
+  description String?
+  active      Boolean  @default(true)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("pooja_schedules")
+}
+
+// Festival
+model Festival {
+  id            String   @id @default(cuid())
+  name          String
+  nameKannada   String?
+  date          DateTime
+  description   String?
+  descriptionKannada String?
+  imageUrl      String?
+  isPanchanga   Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("festivals")
+}

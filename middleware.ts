@@ -1,5 +1,6 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server"
+import type { NextRequest } from "next/server"
+import { updateSession } from "@/lib/supabase/middleware"
 
 // Security headers configuration
 const securityHeaders = {
@@ -8,25 +9,23 @@ const securityHeaders = {
   "X-Content-Type-Options": "nosniff",
   "Referrer-Policy": "strict-origin-when-cross-origin",
   "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
-  "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleapis.com https://*.gstatic.com https://images.unsplash.com; connect-src 'self' https://*.googleapis.com https://*.google.com https://*.googleusercontent.com https://api.stripe.com; frame-src 'self' https://www.google.com https://maps.google.com https://js.stripe.com https://hooks.stripe.com;",
-};
+  "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleapis.com https://*.gstatic.com https://images.unsplash.com https://*.supabase.co; connect-src 'self' https://*.googleapis.com https://*.google.com https://*.googleusercontent.com https://*.supabase.co https://api.stripe.com; frame-src 'self' https://www.google.com https://maps.google.com https://js.stripe.com https://hooks.stripe.com;",
+}
 
-function proxy(request: NextRequest) {
-  // Create response and add security headers
-  const response = NextResponse.next();
+export async function middleware(request: NextRequest) {
+  // Update Supabase session
+  const response = await updateSession(request)
 
   // Apply security headers to all responses
   Object.entries(securityHeaders).forEach(([key, value]) => {
-    response.headers.set(key, value);
-  });
+    response.headers.set(key, value)
+  })
 
-  return response;
+  return response
 }
-
-export default proxy;
 
 export const config = {
   matcher: [
     "/((?!_next/static|_next/image|favicon.ico|public|api/).*)",
   ],
-};
+}

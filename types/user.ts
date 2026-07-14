@@ -1,9 +1,12 @@
 /**
- * User types - Firebase has been removed
- * Using Date instead of Firebase Timestamp
+ * User types - Supabase compatible
  */
 
 export type UserRole =
+  | "SUPER_ADMIN"
+  | "ADMIN"
+  | "PRIEST"
+  | "USER"
   | "super_admin"
   | "temple_admin"
   | "priest"
@@ -16,63 +19,60 @@ export type UserRole =
   | "Temple Admin"
   | "Priest"
   | "Office Staff"
-  | "Volunteer";
+  | "Volunteer"
 
 // Normalized roles for consistent access control
-export type NormalizedRole = "super_admin" | "admin" | "billing" | "volunteer" | "devotee";
+export type NormalizedRole = "super_admin" | "admin" | "billing" | "volunteer" | "devotee"
 
-export function normalizeRole(role: UserRole): NormalizedRole {
-  const roleLower = role.toLowerCase().replace(/\s+/g, "_");
+export function normalizeRole(role: string): NormalizedRole {
+  const roleLower = role.toLowerCase().replace(/\s+/g, "_")
   
   switch (roleLower) {
     case "super_admin":
     case "super admin":
-      return "super_admin";
+      return "super_admin"
     case "billing":
-      return "billing";
+      return "billing"
+    case "admin":
     case "temple_admin":
     case "temple admin":
-    case "admin":
     case "priest":
     case "staff":
     case "office_staff":
     case "office staff":
-      return "admin";
+      return "admin"
     case "volunteer":
-      return "volunteer";
+      return "volunteer"
+    case "user":
     case "devotee":
     default:
-      return "devotee";
+      return "devotee"
   }
 }
 
 export interface UserProfile {
-  uid: string;
-  name: string;
-  email: string;
-  phone: string;
-  role: UserRole;
-  templeId: string;
-  profileImage: string;
-  isApproved: boolean;
-  isActive: boolean;
-  emailVerified: boolean;
-  lastLogin: Date | string | null;
-  createdAt: Date | string;
-  updatedAt: Date | string;
+  id: string
+  userId: string
+  name: string | null
+  email: string
+  phone: string | null
+  role: string
+  avatarUrl: string | null
+  address: string | null
+  createdAt: Date | string
+  updatedAt: Date | string
 }
 
 export interface TempleUser {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  role: UserRole;
-  active: boolean;
-  isActive: boolean;
-  createdAt: Date | string;
-  updatedAt: Date | string;
+  id: string
+  name: string
+  email: string
+  phone: string
+  role: UserRole
+  active: boolean
+  createdAt: Date | string
+  updatedAt: Date | string
 }
 
-export type TempleUserCreate = Pick<TempleUser, "name" | "email" | "phone" | "role" | "active">;
-export type TempleUserUpdate = Partial<TempleUserCreate>;
+export type TempleUserCreate = Pick<TempleUser, "name" | "email" | "phone" | "role" | "active">
+export type TempleUserUpdate = Partial<TempleUserCreate>

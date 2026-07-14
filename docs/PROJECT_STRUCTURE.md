@@ -203,6 +203,12 @@ Rayaramathaynk/
 ## Environment Variables
 
 ```env
+# Supabase (Required)
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+DATABASE_URL=postgresql://...
+
 # Chatbot (Optional)
 NEXT_PUBLIC_CHATBOT_ID=
 NEXT_PUBLIC_CHATBOT_LANGUAGE=en
@@ -222,6 +228,9 @@ NEXT_PUBLIC_APP_URL=
 | Styling | Tailwind CSS |
 | Animation | Framer Motion |
 | Icons | Lucide React |
-| Backend | To be configured |
+| Database | PostgreSQL (via Supabase) |
+| ORM | Prisma |
+| Auth | Supabase Auth |
+| Storage | Supabase Storage |
 | Deployment | Static hosting |
 | Calendar | Panchanga (Python) |
