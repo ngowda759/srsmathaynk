@@ -1,6 +1,6 @@
 // =============================================================================
 // Sri Raghavendra Swamy Temple - Database Schema
-// Sprint 2 - Database Design
+// Domain Model v5 - Approved Architecture
 // =============================================================================
 
 generator client {
@@ -9,191 +9,373 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 // =============================================================================
-// USER MANAGEMENT
+// USER MANAGEMENT - RBAC (Profile + Role + UserRole)
 // =============================================================================
 
 /// User Profile - linked to Supabase Auth
 model Profile {
-  id            String    @id @default(cuid())
+  id            String    @id @default(uuid())
   userId        String    @unique
   email         String    @unique
   name          String?
-  role          UserRole  @default(DEVOTEE)
   phone         String?
   address       String?
   avatarUrl     String?
   emailVerified Boolean   @default(false)
   isActive      Boolean   @default(true)
   lastLoginAt   DateTime?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+
+  // Audit fields
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   // Relations
-  donations       Donation[]
-  sevaBookings    SevaBooking[]
-  announcements   Announcement[]
-  testimonial     Testimonial?
-  aiFeedback      AIChatFeedback[]
+  donations     Donation[]
+  bookings      Booking[]
+  announcements Announcement[]
+  testimonial   Testimonial?
+  aiFeedback    AIChatFeedback[]
+  userRoles     UserRole[]
 
   @@index([email])
-  @@index([role])
+  @@index([isActive])
   @@map("profiles")
 }
 
-/// User Roles
-enum UserRole {
-  DEVOTEE      // Regular user/devotee
-  VOLUNTEER    // Temple volunteer
-  PRIEST       // Temple priest
-  STAFF        // Temple staff
-  ADMIN        // Temple administrator
-  SUPER_ADMIN  // Super administrator
+/// Role definition
+model Role {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  permissions String[] // Array of permission strings
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userRoles UserRole[]
+
+  @@map("roles")
 }
 
-/// User Sessions - for tracking active sessions
-model UserSession {
-  id           String   @id @default(cuid())
-  profileId    String
-  sessionToken String   @unique
-  deviceInfo   String?
-  ipAddress    String?
-  expiresAt    DateTime
-  createdAt    DateTime @default(now())
+/// User-Role association (many-to-many)
+model UserRole {
+  id        String @id @default(uuid())
+  profileId String
+  roleId    String
+
+  createdAt DateTime @default(now())
 
   profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  role    Role    @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
-  @@index([profileId])
-  @@index([expiresAt])
-  @@map("user_sessions")
+  @@unique([profileId, roleId])
+  @@map("user_roles")
 }
 
 // =============================================================================
-// TEMPLE SETTINGS
+// TEMPLE CONFIGURATION
 // =============================================================================
 
 /// Temple Information
-model TempleSettings {
-  id              String  @id @default(cuid())
-  templeName      String
-  shortName       String?
-  tagline         String?
-  description     String?
-  address         String?
-  city            String?
-  district        String?
-  state           String?
-  country         String  @default("India")
-  pincode         String?
-  phone           String?
-  alternatePhone  String?
-  email           String?
-  website         String?
-  mapEmbedUrl     String?
-  latitude        Float?
-  longitude       Float?
+model TempleInfo {
+  id String @id @default(uuid())
+
+  // Basic Info
+  name        String
+  shortName   String?
+  tagline     String?
+  description String?
+
+  // Address
+  address  String?
+  city     String?
+  district String?
+  state    String?
+  country  String  @default("India")
+  pincode  String?
+
+  // Contact
+  phone          String?
+  alternatePhone String?
+  email          String?
+  website        String?
+
+  // Location
+  mapEmbedUrl String?
+  latitude    Float?
+  longitude   Float?
 
   // Social Media
-  socialFacebook    String?
-  socialTwitter     String?
-  socialInstagram   String?
-  socialYoutube     String?
-  socialWhatsapp    String?
+  socialFacebook  String?
+  socialTwitter   String?
+  socialInstagram String?
+  socialYoutube   String?
+  socialWhatsapp  String?
 
   // Bank Details for Donations
-  bankName         String?
-  bankAccountName  String?
+  bankName          String?
+  bankAccountName   String?
   bankAccountNumber String?
-  bankIFSCCode     String?
-  bankUPIId        String?
+  bankIFSCCode      String?
+  bankUPIId         String?
 
   // Statistics
-  establishedYear   Int?
-  priestCount      Int?
-  dailyVisitors    Int?
+  establishedYear Int?
+  priestCount     Int?
+  dailyVisitors   Int?
+
+  // Logo
+  logoUrl    String?
+  faviconUrl String?
+
+  // Audit fields
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("temple_info")
+}
+
+/// Site-wide Settings (Key-Value Store)
+model SiteSetting {
+  id          String  @id @default(uuid())
+  key         String  @unique
+  value       String  @db.Text
+  description String?
+  category    String? // "general", "seo", "social", "email", etc.
+  isPublic    Boolean @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@map("temple_settings")
+  @@index([category])
+  @@map("site_settings")
 }
 
+// =============================================================================
+// HOMEPAGE CONFIGURATION
+// =============================================================================
+
 /// Homepage Configuration
-model HomepageSettings {
-  id               String  @id @default(cuid())
-  heroTitle        String?
-  heroSubtitle     String?
-  heroImageUrl     String?
-  heroVideoUrl     String?
+model HomepageConfig {
+  id String @id @default(uuid())
 
-  aboutTitle       String?
-  aboutContent     String?
-  aboutImageUrl    String?
+  // Hero Section
+  heroTitle               String?
+  heroSubtitle            String?
+  heroImageUrl            String?
+  heroVideoUrl            String?
+  heroPrimaryButtonText   String?
+  heroPrimaryButtonUrl    String?
+  heroSecondaryButtonText String?
+  heroSecondaryButtonUrl  String?
 
+  // About Section
+  aboutTitle    String?
+  aboutContent  String? @db.Text
+  aboutImageUrl String?
+
+  // Section Visibility
   showFeaturedEvents  Boolean @default(true)
   showFeaturedSevas   Boolean @default(true)
   showDonationSection Boolean @default(true)
-  showGalleryPreview   Boolean @default(true)
-  showAnnouncements    Boolean @default(true)
+  showGalleryPreview  Boolean @default(true)
+  showAnnouncements   Boolean @default(true)
+  showTestimonials    Boolean @default(true)
+  showPanchanga       Boolean @default(true)
 
-  featuredEventsLimit  Int @default(6)
-  featuredSevasLimit    Int @default(8)
-  galleryPreviewLimit   Int @default(8)
+  // Limits
+  featuredEventsLimit Int @default(6)
+  featuredSevasLimit  Int @default(8)
+  galleryPreviewLimit Int @default(8)
+  testimonialLimit    Int @default(5)
 
-  donationTitle     String?
-  donationSubtitle  String?
-  newsTitle         String?
+  // Donation Section
+  donationTitle    String?
+  donationSubtitle String?
+
+  // Announcement Banner
+  announcementBannerText String?
+  announcementBannerUrl  String?
+
+  // Footer
+  footerCopyright String?
+  footerTagline   String?
+
+  // Audit fields
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  media     Media?   @relation(fields: [mediaId], references: [id])
+  mediaId   String?
+
+  @@map("homepage_configs")
+}
+
+// =============================================================================
+// TEMPLE SCHEDULE (TempleDay + TempleException)
+// =============================================================================
+
+/// Regular Temple Days
+model TempleDay {
+  id        String  @id @default(uuid())
+  dayOfWeek Int // 0=Sunday, 1=Monday, etc.
+  name      String? // e.g., "Sunday", "Monday"
+
+  // Morning timings
+  morningOpenTime  String? // e.g., "05:00"
+  morningCloseTime String? // e.g., "13:00"
+
+  // Evening timings
+  eveningOpenTime  String?
+  eveningCloseTime String?
+
+  // Special notes
+  notes String?
+
+  // Status
+  isHoliday Boolean @default(false)
+  isActive  Boolean @default(true)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@map("homepage_settings")
+  @@unique([dayOfWeek])
+  @@map("temple_days")
 }
 
-/// Temple Timings
-model TempleTiming {
-  id         String   @id @default(cuid())
-  dayOfWeek  Int      // 0=Sunday, 1=Monday, etc.
-  openTime   String   // e.g., "05:00"
-  closeTime  String   // e.g., "21:00"
-  isHoliday  Boolean  @default(false)
-  notes      String?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+/// Temple Schedule Exceptions (Special days, holidays, closures)
+model TempleException {
+  id String @id @default(uuid())
 
-  @@unique([dayOfWeek])
-  @@map("temple_timings")
+  date        DateTime
+  name        String? // e.g., "Diwali", "Special Festival"
+  description String?
+
+  // Override timings (null means closed)
+  morningOpenTime  String?
+  morningCloseTime String?
+  eveningOpenTime  String?
+  eveningCloseTime String?
+
+  // Status
+  isClosed       Boolean @default(false)
+  isSpecialEvent Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([date])
+  @@map("temple_exceptions")
+}
+
+// =============================================================================
+// CENTRALIZED MEDIA
+// =============================================================================
+
+/// Media Library (centralized media storage)
+model Media {
+  id String @id @default(uuid())
+
+  // File Info
+  filename     String
+  originalName String?
+  mimeType     String?
+  fileSize     Int? // bytes
+
+  // Storage
+  bucket      String @default("media")
+  storagePath String // Path in Supabase Storage
+
+  // Metadata
+  title       String?
+  altText     String?
+  caption     String?
+  description String?
+
+  // Classification
+  type     MediaType @default(IMAGE)
+  category String? // "events", "gallery", "poojas", "aaradhanes", etc.
+
+  // Media-specific fields
+  width    Int?
+  height   Int?
+  duration Int? // seconds (for audio/video)
+
+  // Status
+  isPublic   Boolean @default(true)
+  isFeatured Boolean @default(false)
+  isActive   Boolean @default(true)
+
+  // Usage tracking
+  viewCount     Int @default(0)
+  downloadCount Int @default(0)
+
+  // Upload info
+  uploadedBy String?
+
+  // Audit fields
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  // Relations
+  eventImages       Event[]            @relation("EventImages")
+  eventBanners      Event[]            @relation("EventBanners")
+  galleryItems      GalleryItem[]
+  aaradhaneImages   Aaradhane[]
+  aaradhaneThumbs   Aaradhane[]        @relation("AaradhaneThumbnails")
+  sevaimages        Seva[]             @relation("SevaImages")
+  donationImages    DonationCampaign[]
+  trustMemberImages TrustMember[]
+  staffImages       Staff[]
+  facilityImages    Facility[]
+  testimonialImages Testimonial[]
+  homepageImages    HomepageConfig[]
+
+  @@index([type, isActive])
+  @@index([category])
+  @@index([isFeatured])
+  @@map("media")
+}
+
+enum MediaType {
+  IMAGE
+  VIDEO
+  AUDIO
+  DOCUMENT
 }
 
 // =============================================================================
 // ANNOUNCEMENTS
 // =============================================================================
 
-/// Temple Announcements
 model Announcement {
-  id          String           @id @default(cuid())
-  title       String
-  content     String
-  excerpt     String?
+  id      String  @id @default(uuid())
+  title   String
+  content String  @db.Text
+  excerpt String?
 
-  type        AnnouncementType @default(GENERAL)
-  priority    Priority         @default(NORMAL)
+  type     AnnouncementType @default(GENERAL)
+  priority Priority         @default(NORMAL)
 
-  isPinned    Boolean          @default(false)
-  active      Boolean          @default(true)
-  expiresAt   DateTime?
+  isPinned  Boolean   @default(false)
+  isActive  Boolean   @default(true)
+  expiresAt DateTime?
 
-  authorId    String?
-  author      Profile?         @relation(fields: [authorId], references: [id])
+  authorId String?
+  author   Profile? @relation(fields: [authorId], references: [id])
 
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
+  // Audit fields
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
-  @@index([active, expiresAt])
+  @@index([isActive, expiresAt])
   @@index([type])
+  @@index([priority])
   @@map("announcements")
 }
 
@@ -219,41 +401,51 @@ enum Priority {
 
 /// Temple Events
 model Event {
-  id          String      @id @default(cuid())
-  title       String
-  titleKannada String?
-  description String?
-  descriptionKannada String?
+  id      String  @id @default(uuid())
+  title   String
+  titleKn String? // Kannada
 
-  startDate   DateTime
-  endDate     DateTime
-  startTime   String?
-  endTime     String?
+  description   String? @db.Text
+  descriptionKn String? @db.Text
 
-  location    String?
-  isOnline    Boolean     @default(false)
-  onlineLink  String?
+  startDate DateTime
+  endDate   DateTime
+  startTime String?
+  endTime   String?
 
-  type        EventType   @default(GENERAL)
-  status      EventStatus @default(UPCOMING)
+  location   String?
+  isOnline   Boolean @default(false)
+  onlineLink String?
 
-  featured    Boolean     @default(false)
-  published   Boolean     @default(false)
+  type   EventType   @default(GENERAL)
+  status EventStatus @default(UPCOMING)
 
-  imageUrl    String?
-  bannerUrl   String?
+  featured  Boolean @default(false)
+  published Boolean @default(false)
 
-  maxAttendees Int?
-  currentAttendees Int @default(0)
+  // Media
+  imageId  String?
+  image    Media?  @relation("EventImages", fields: [imageId], references: [id])
+  bannerId String?
+  banner   Media?  @relation("EventBanners", fields: [bannerId], references: [id])
 
-  organizer   String?
+  maxAttendees     Int?
+  currentAttendees Int  @default(0)
+
+  organizer    String?
   contactPhone String?
   contactEmail String?
 
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  // Audit fields
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+  createdById String?
+  updatedById String?
 
-  bookings    EventBooking[]
+  // Relations
+  bookings     BookingItem[]
+  galleryItems GalleryItem[]
 
   @@index([startDate, published])
   @@index([status])
@@ -276,43 +468,29 @@ enum EventStatus {
   CANCELLED
 }
 
-/// Event Bookings
-model EventBooking {
-  id           String          @id @default(cuid())
-  eventId      String
-  userId       String?
-  attendeeName String
-  attendeeEmail String
-  attendeePhone String?
-  tickets      Int             @default(1)
-  status       BookingStatus   @default(CONFIRMED)
-  notes        String?
-  createdAt    DateTime        @default(now())
-  updatedAt    DateTime        @updatedAt
-
-  event        Event           @relation(fields: [eventId], references: [id], onDelete: Cascade)
-
-  @@index([eventId])
-  @@map("event_bookings")
-}
-
 /// Festivals
 model Festival {
-  id              String   @id @default(cuid())
-  name            String
-  nameKannada     String?
-  date            DateTime
-  endDate         DateTime?
-  description     String?
-  descriptionKannada String?
-  significance    String?
+  id     String  @id @default(uuid())
+  name   String
+  nameKn String?
 
-  imageUrl        String?
+  date    DateTime
+  endDate DateTime?
+
+  description   String? @db.Text
+  descriptionKn String? @db.Text
+  significance  String? @db.Text
+
+  // Media
+  imageUrl String?
+
   isMajorFestival Boolean @default(false)
   isHoliday       Boolean @default(true)
 
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  // Audit fields
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   @@index([date])
   @@map("festivals")
@@ -320,31 +498,31 @@ model Festival {
 
 /// Panchanga (Daily Calendar Data)
 model Panchanga {
-  id          String   @id @default(cuid())
-  date        DateTime @unique
+  id   String   @id @default(uuid())
+  date DateTime @unique
 
   // Tithis
-  tithi       String
-  tithiEnd    String?
+  tithi    String
+  tithiEnd String?
 
   // Nakshatras
-  nakshatra   String
+  nakshatra    String
   nakshatraEnd String?
 
   // Yoga
-  yoga        String
-  yogaEnd     String?
+  yoga    String
+  yogaEnd String?
 
   // Karana
-  karana      String
-  karanaEnd   String?
+  karana    String
+  karanaEnd String?
 
   // Sun & Moon
-  sunrise     String
-  sunset      String
-  moonrise    String?
-  moonset     String?
-  moonPhase   String?
+  sunrise   String
+  sunset    String
+  moonrise  String?
+  moonset   String?
+  moonPhase String?
 
   // Auspicious Times
   brahmaMuhurta String?
@@ -357,10 +535,11 @@ model Panchanga {
   yamaganda   String?
   durMuhurtam String?
 
-  notes       String?
+  notes String?
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  // Audit fields
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([date])
   @@map("panchangas")
@@ -368,86 +547,158 @@ model Panchanga {
 
 /// Daily Pooja Schedule
 model PoojaSchedule {
-  id          String   @id @default(cuid())
-  name        String
-  nameKannada String?
-  time        String
-  description String?
-  descriptionKannada String?
+  id     String  @id @default(uuid())
+  name   String
+  nameKn String?
 
-  category    String?  // "Morning", "Afternoon", "Evening", "Special"
-  isSpecial   Boolean @default(false)
+  time          String
+  description   String?
+  descriptionKn String?
 
-  active      Boolean  @default(true)
-  order       Int      @default(0)
+  category  String? // "Morning", "Afternoon", "Evening", "Special"
+  isSpecial Boolean @default(false)
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  // Media
+  imageUrl String?
+
+  active Boolean @default(true)
+  order  Int     @default(0)
+
+  // Audit fields
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   @@index([active, order])
   @@map("pooja_schedules")
 }
 
 // =============================================================================
-// AARADHANE (SPECIAL POOJAS)
+// UNIFIED BOOKING SYSTEM (Booking + BookingItem)
 // =============================================================================
 
-/// Aaradhane (Special Poojas/Deities)
-model Aaradhane {
-  id          String   @id @default(cuid())
-  title       String
-  titleKannada String?
+/// Unified Booking
+model Booking {
+  id String @id @default(uuid())
 
-  deityName   String?
-  guruName    String?
+  // Booking Reference
+  referenceNumber String @unique
 
-  description String?  @db.Text
-  significance String?  @db.Text
+  // User Info
+  profileId String?
+  profile   Profile? @relation(fields: [profileId], references: [id])
 
-  startDate   DateTime?
-  endDate     DateTime?
+  // Guest Info (for non-logged in users)
+  guestName  String?
+  guestEmail String?
+  guestPhone String?
 
-  imageUrl    String?
-  thumbnailUrl String?
+  // Booking Details
+  bookingType   BookingType
+  bookingDate   DateTime
+  preferredTime String?
 
-  rituals     String[] // Array of ritual names
-  offerings   String[] // Array of offerings
+  // Status
+  status BookingStatus @default(PENDING)
 
-  isFeatured  Boolean  @default(false)
-  isActive    Boolean  @default(true)
-  order       Int      @default(0)
+  // Financial
+  totalAmount Float  @default(0)
+  currency    String @default("INR")
+  paidAmount  Float  @default(0)
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  // Devotee Info (for religious bookings)
+  devoteeName String?
+  gothra      String?
+  nakshatra   String?
+  gotraKn     String?
 
-  sevas       AaradhaneSeva[]
+  // Notes
+  notes      String? @db.Text
+  adminNotes String? @db.Text
 
-  @@index([isFeatured, isActive])
-  @@map("aaradhanes")
+  // Receipt
+  receiptNumber String?
+  receiptUrl    String?
+
+  // Audit fields
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+  createdById String?
+  updatedById String?
+
+  // Relations
+  items BookingItem[]
+
+  @@index([profileId])
+  @@index([bookingType, bookingDate])
+  @@index([status])
+  @@map("bookings")
 }
 
-/// Aaradhane Seva (Associated Sevas)
-model AaradhaneSeva {
-  id           String   @id @default(cuid())
-  aaradhaneId  String
+enum BookingType {
+  SEVA
+  EVENT
+  DONATION
+  OTHER
+}
 
-  name         String
-  nameKannada  String?
-  description  String?  @db.Text
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+  REFUNDED
+}
 
-  amount       Float    @default(0)
-  currency     String   @default("INR")
+/// Booking Items (supports multiple items per booking)
+model BookingItem {
+  id        String @id @default(uuid())
+  bookingId String
 
-  isActive     Boolean  @default(true)
-  order        Int      @default(0)
+  // Reference to the booked entity
+  itemType BookingItemType
+  itemId   String // ID of Seva, Event, etc.
 
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  // Item Details (denormalized for historical record)
+  itemName   String
+  itemNameKn String?
 
-  aaradhane    Aaradhane @relation(fields: [aaradhaneId], references: [id], onDelete: Cascade)
+  // Quantity and Price
+  quantity   Int   @default(1)
+  unitPrice  Float @default(0)
+  totalPrice Float @default(0)
 
-  @@index([aaradhaneId])
-  @@map("aaradhane_sevas")
+  // Date/Time
+  requestedDate DateTime?
+  requestedTime String?
+
+  // Status
+  status BookingStatus @default(CONFIRMED)
+
+  // Additional Info
+  notes String? @db.Text
+
+  // Audit fields
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  event   Event?  @relation(fields: [eventId], references: [id])
+  eventId String?
+
+  @@index([bookingId])
+  @@index([itemType, itemId])
+  @@map("booking_items")
+}
+
+enum BookingItemType {
+  SEVA
+  SEVA_BOOKING
+  EVENT
+  EVENT_BOOKING
+  DONATION
+  OTHER
 }
 
 // =============================================================================
@@ -456,92 +707,119 @@ model AaradhaneSeva {
 
 /// Seva Types
 model Seva {
-  id                  String   @id @default(cuid())
-  name                String
-  nameKannada         String?
-  description         String?
-  descriptionKannada  String?
+  id String @id @default(uuid())
 
-  price               Float    @default(0)
-  priceKannada         Float?
-  currency            String   @default("INR")
+  name          String
+  nameKn        String?
+  description   String? @db.Text
+  descriptionKn String? @db.Text
 
-  duration            String?  // e.g., "30 minutes", "1 hour"
-  category            String?  // "Daily", "Special", "Premium"
+  price    Float  @default(0)
+  currency String @default("INR")
 
-  imageUrl            String?
-  iconName            String?
+  duration String? // e.g., "30 minutes", "1 hour"
 
-  active              Boolean  @default(true)
-  featured             Boolean @default(false)
+  category String? // "Daily", "Special", "Premium"
 
-  maxPerDay           Int?     // Maximum bookings per day
-  minAdvanceBooking    Int?     // Minimum days in advance
-  maxAdvanceBooking    Int?     // Maximum days in advance
+  // Media
+  imageId  String?
+  image    Media?  @relation("SevaImages", fields: [imageId], references: [id])
+  iconName String?
 
-  instructions        String?  // Special instructions for devotees
-  benefits            String?  // Spiritual benefits
+  active   Boolean @default(true)
+  featured Boolean @default(false)
 
-  order               Int      @default(0)
+  maxPerDay         Int? // Maximum bookings per day
+  minAdvanceBooking Int? // Minimum days in advance
+  maxAdvanceBooking Int? // Maximum days in advance
 
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  instructions String? @db.Text
+  benefits     String? @db.Text
 
-  bookings            SevaBooking[]
+  order Int @default(0)
+
+  // Audit fields
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  // Relations
+  aaradhaneSevas AaradhaneSeva[]
 
   @@index([active, featured])
   @@index([category])
   @@map("sevas")
 }
 
-/// Seva Bookings
-model SevaBooking {
-  id           String        @id @default(cuid())
-  userId       String
-  sevaId       String
-  bookingDate  DateTime
-  preferredTime String?
+// =============================================================================
+// AARADHANE (SPECIAL POOJAS)
+// =============================================================================
 
-  status       BookingStatus @default(PENDING)
-  notes        String?
+/// Aaradhane (Special Poojas/Deities)
+model Aaradhane {
+  id String @id @default(uuid())
 
-  amount       Float
-  currency     String        @default("INR")
-  paymentId    String?
-  paymentStatus PaymentStatus @default(PENDING)
+  title   String
+  titleKn String?
 
-  devoteeName  String?
-  gothra       String?
-  nakshatra    String?
+  deityName String?
+  guruName  String?
 
-  // Receipt info
-  receiptNumber String?
-  receiptUrl   String?
+  description  String? @db.Text
+  significance String? @db.Text
 
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  startDate DateTime?
+  endDate   DateTime?
 
-  profile      Profile       @relation(fields: [userId], references: [id])
-  seva         Seva          @relation(fields: [sevaId], references: [id])
+  // Media
+  imageId     String?
+  image       Media?  @relation(fields: [imageId], references: [id])
+  thumbnailId String?
+  thumbnail   Media?  @relation("AaradhaneThumbnails", fields: [thumbnailId], references: [id])
 
-  @@index([userId, bookingDate])
-  @@index([sevaId, bookingDate])
-  @@index([status])
-  @@map("seva_bookings")
+  rituals   String[] // Array of ritual names
+  offerings String[] // Array of offerings
+
+  featured Boolean @default(false)
+  active   Boolean @default(true)
+  order    Int     @default(0)
+
+  // Audit fields
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  sevas AaradhaneSeva[]
+
+  @@index([featured, active])
+  @@map("aaradhanes")
 }
 
-enum BookingStatus {
-  PENDING
-  CONFIRMED
-  COMPLETED
-  CANCELLED
-}
+/// Aaradhane Seva (Associated Sevas)
+model AaradhaneSeva {
+  id          String @id @default(uuid())
+  aaradhaneId String
 
-enum PaymentStatus {
-  PENDING
-  PAID
-  FAILED
-  REFUNDED
+  name        String
+  nameKn      String?
+  description String? @db.Text
+
+  amount   Float  @default(0)
+  currency String @default("INR")
+
+  active Boolean @default(true)
+  order  Int     @default(0)
+
+  // Audit fields
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  aaradhane Aaradhane @relation(fields: [aaradhaneId], references: [id], onDelete: Cascade)
+  seva      Seva?     @relation(fields: [sevaId], references: [id])
+  sevaId    String?
+
+  @@index([aaradhaneId])
+  @@map("aaradhane_sevas")
 }
 
 // =============================================================================
@@ -550,34 +828,41 @@ enum PaymentStatus {
 
 /// Donation Campaigns
 model DonationCampaign {
-  id              String   @id @default(cuid())
-  title           String
-  titleKannada    String?
-  description     String?
-  descriptionKannada String?
+  id String @id @default(uuid())
 
-  targetAmount    Float?
-  raisedAmount    Float    @default(0)
-  currency        String   @default("INR")
+  title         String
+  titleKn       String?
+  description   String? @db.Text
+  descriptionKn String? @db.Text
 
-  imageUrl        String?
-  videoUrl       String?
+  targetAmount Float?
+  raisedAmount Float  @default(0)
+  currency     String @default("INR")
 
-  active          Boolean  @default(true)
-  featured        Boolean  @default(false)
+  // Media
+  imageId  String?
+  image    Media?  @relation(fields: [imageId], references: [id])
+  videoUrl String?
 
-  startDate       DateTime?
-  endDate         DateTime?
+  active   Boolean @default(true)
+  featured Boolean @default(false)
 
-  urgencyLevel    UrgencyLevel @default(NORMAL)
+  startDate DateTime?
+  endDate   DateTime?
 
-  category        String?  // "Development", "Maintenance", "Charity", "Temple Fund"
+  urgencyLevel UrgencyLevel @default(NORMAL)
 
-  createdBy       String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  category String? // "Development", "Maintenance", "Charity", "Temple Fund"
 
-  donations       Donation[]
+  createdBy String?
+
+  // Audit fields
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  // Relations
+  donations Donation[]
 
   @@index([active, featured])
   @@map("donation_campaigns")
@@ -592,38 +877,49 @@ enum UrgencyLevel {
 
 /// Donations
 model Donation {
-  id             String           @id @default(cuid())
-  userId         String?
-  campaignId     String?
+  id String @id @default(uuid())
 
-  amount         Float
-  currency       String           @default("INR")
+  // User
+  profileId String?
+  profile   Profile? @relation(fields: [profileId], references: [id])
 
-  paymentMethod  PaymentMethod?
-  paymentId      String?
-  transactionId  String?
+  // Campaign
+  campaignId String?
+  campaign   DonationCampaign? @relation(fields: [campaignId], references: [id])
 
-  status         DonationStatus   @default(PENDING)
+  // Amount
+  amount   Float
+  currency String @default("INR")
 
-  // Donor Information
-  donorName      String
-  donorEmail     String
-  donorPhone     String?
-  anonymous      Boolean         @default(false)
+  // Payment
+  paymentMethod PaymentMethod?
+  paymentId     String?
+  transactionId String?
+  status        DonationStatus @default(PENDING)
 
-  message        String?
-  dedication      String?
+  // Donor Info
+  donorName    String
+  donorEmail   String
+  donorPhone   String?
+  donorAddress String?
+  anonymous    Boolean @default(false)
 
-  receiptNumber  String?
-  receiptUrl     String?
+  message    String?
+  dedication String?
 
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
+  // Receipt
+  receiptNumber String?
+  receiptUrl    String?
 
-  profile        Profile?        @relation(fields: [userId], references: [id])
-  campaign       DonationCampaign? @relation(fields: [campaignId], references: [id])
+  // Audit fields
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
-  @@index([userId])
+  // Relations
+  payments DonationPayment[]
+
+  @@index([profileId])
   @@index([campaignId])
   @@index([status, createdAt])
   @@map("donations")
@@ -647,55 +943,76 @@ enum DonationStatus {
   REFUNDED
 }
 
+/// Donation Payment Attempts
+model DonationPayment {
+  id         String @id @default(uuid())
+  donationId String
+
+  amount   Float
+  currency String @default("INR")
+
+  paymentMethod PaymentMethod
+  paymentId     String?
+  transactionId String?
+
+  status PaymentAttemptStatus @default(PENDING)
+
+  responseData Json?
+  errorMessage String?
+
+  attemptedAt DateTime  @default(now())
+  completedAt DateTime?
+
+  donation Donation @relation(fields: [donationId], references: [id], onDelete: Cascade)
+
+  @@index([donationId])
+  @@map("donation_payments")
+}
+
+enum PaymentAttemptStatus {
+  PENDING
+  PROCESSING
+  SUCCESS
+  FAILED
+  REFUNDED
+}
+
 // =============================================================================
 // GALLERY
 // =============================================================================
 
-/// Gallery Images & Videos
+/// Gallery Items
 model GalleryItem {
-  id           String    @id @default(cuid())
-  title        String?
-  titleKannada String?
-  description  String?
-  descriptionKannada String?
+  id String @id @default(uuid())
 
-  src          String    // Storage URL or local path
-  thumbnailUrl String?
+  title         String?
+  titleKn       String?
+  description   String?
+  descriptionKn String?
 
-  type         MediaType @default(IMAGE)
-  category     String?   // "Temple", "Events", "Festivals", "Construction", "Staff"
-
-  featured     Boolean   @default(false)
-  active       Boolean   @default(true)
-  order        Int       @default(0)
-
-  // For videos
-  videoDuration Int?
-  videoUrl     String?
-
-  // Metadata
-  altText      String?
-  credit       String?
+  // Media
+  mediaId String
+  media   Media  @relation(fields: [mediaId], references: [id])
 
   // Event association
-  eventId      String?
-  event        Event?    @relation(fields: [eventId], references: [id])
+  eventId String?
+  event   Event?  @relation(fields: [eventId], references: [id])
 
-  uploadedBy   String?
+  featured Boolean @default(false)
+  active   Boolean @default(true)
+  order    Int     @default(0)
 
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  uploadedBy String?
 
-  @@index([type, active])
-  @@index([category, active])
+  // Audit fields
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@index([active])
+  @@index([featured])
+  @@index([eventId])
   @@map("gallery_items")
-}
-
-enum MediaType {
-  IMAGE
-  VIDEO
-  AUDIO
-  DOCUMENT
 }
 
 // =============================================================================
@@ -704,30 +1021,35 @@ enum MediaType {
 
 /// Trust/Committee Members
 model TrustMember {
-  id              String   @id @default(cuid())
-  name            String
-  nameKannada     String?
-  designation     String
-  designationKannada String?
+  id String @id @default(uuid())
 
-  bio             String?
-  bioKannada      String?
+  name          String
+  nameKn        String?
+  designation   String
+  designationKn String?
 
-  imageUrl        String?
+  bio   String? @db.Text
+  bioKn String?
 
-  email           String?
-  phone           String?
+  // Media
+  imageId String?
+  image   Media?  @relation(fields: [imageId], references: [id])
 
-  type            MemberType @default(MEMBER)
+  email String?
+  phone String?
 
-  order           Int      @default(0)
-  active          Boolean  @default(true)
+  type MemberType @default(MEMBER)
 
-  isPontiff       Boolean  @default(false)
-  isResident      Boolean  @default(false)
+  order  Int     @default(0)
+  active Boolean @default(true)
 
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  isPontiff  Boolean @default(false)
+  isResident Boolean @default(false)
+
+  // Audit fields
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   @@index([type, active])
   @@map("trust_members")
@@ -735,7 +1057,7 @@ model TrustMember {
 
 enum MemberType {
   PONTIFF
- _TRUSTEE
+  TRUSTEE
   MEMBER
   SECRETARY
   STAFF
@@ -744,22 +1066,28 @@ enum MemberType {
 
 /// Temple Staff
 model Staff {
-  id          String   @id @default(cuid())
+  id String @id @default(uuid())
+
   name        String
   designation String
   department  String?
 
-  imageUrl    String?
-  bio         String?
+  // Media
+  imageId String?
+  image   Media?  @relation(fields: [imageId], references: [id])
 
-  phone       String?
-  email       String?
+  bio String? @db.Text
 
-  active      Boolean  @default(true)
-  order       Int      @default(0)
+  phone String?
+  email String?
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  active Boolean @default(true)
+  order  Int     @default(0)
+
+  // Audit fields
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   @@map("staff")
 }
@@ -770,74 +1098,80 @@ model Staff {
 
 /// Temple Facilities
 model Facility {
-  id          String   @id @default(cuid())
-  name        String
-  nameKannada String?
-  description String?
-  descriptionKannada String?
+  id String @id @default(uuid())
 
-  icon        String?
-  imageUrl    String?
-  color       String?
+  name          String
+  nameKn        String?
+  description   String?
+  descriptionKn String?
+
+  icon    String?
+  imageId String?
+  image   Media?  @relation(fields: [imageId], references: [id])
+  color   String?
 
   instructions String?
 
-  isActive    Boolean  @default(true)
-  order       Int      @default(0)
+  active Boolean @default(true)
+  order  Int     @default(0)
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  // Audit fields
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   @@map("facilities")
 }
 
 /// Amenities
 model Amenity {
-  id          String   @id @default(cuid())
+  id String @id @default(uuid())
+
   name        String
   description String?
   icon        String?
 
-  isAvailable Boolean  @default(true)
-  order       Int      @default(0)
+  available Boolean @default(true)
+  order     Int     @default(0)
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  // Audit fields
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   @@map("amenities")
 }
 
-// =============================================================================
-// FUTURE PLANS & DEVELOPMENTS
-// =============================================================================
-
 /// Future Plans
 model FuturePlan {
-  id              String   @id @default(cuid())
-  title           String
-  titleKannada    String?
-  description     String?
-  descriptionKannada String?
+  id String @id @default(uuid())
 
-  icon            String?
-  imageUrl        String?
+  title         String
+  titleKn       String?
+  description   String? @db.Text
+  descriptionKn String? @db.Text
 
-  targetAmount    Float?
-  raisedAmount    Float    @default(0)
+  icon     String?
+  imageUrl String?
 
-  status          PlanStatus @default(PLANNING)
-  priority        Int      @default(0)
+  targetAmount Float?
+  raisedAmount Float  @default(0)
 
-  isActive        Boolean  @default(true)
-  isFeatured      Boolean  @default(false)
-  order           Int      @default(0)
+  status   PlanStatus @default(PLANNING)
+  priority Int        @default(0)
 
-  startDate       DateTime?
-  targetDate      DateTime?
-  completedDate   DateTime?
+  active   Boolean @default(true)
+  featured Boolean @default(false)
+  order    Int     @default(0)
 
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  startDate     DateTime?
+  targetDate    DateTime?
+  completedDate DateTime?
+
+  // Audit fields
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   @@map("future_plans")
 }
@@ -856,50 +1190,52 @@ enum PlanStatus {
 
 /// AI Chatbot Knowledge Categories
 model AIKnowledgeCategory {
-  id          String   @id @default(cuid())
+  id String @id @default(uuid())
+
   name        String
   description String?
 
-  icon        String?
-  color       String?
+  icon  String?
+  color String?
 
-  order       Int      @default(0)
-  active      Boolean  @default(true)
+  order  Int     @default(0)
+  active Boolean @default(true)
 
-  articles    AIKnowledgeArticle[]
+  // Audit fields
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  articles AIKnowledgeArticle[]
 
   @@map("ai_knowledge_categories")
 }
 
 /// AI Chatbot Knowledge Articles
 model AIKnowledgeArticle {
-  id          String   @id @default(cuid())
-  categoryId  String
+  id         String @id @default(uuid())
+  categoryId String
 
-  question    String
-  questionKannada String?
+  question   String
+  questionKn String?
 
-  answer      String   @db.Text
-  answerKannada String? @db.Text
+  answer   String  @db.Text
+  answerKn String? @db.Text
 
-  keywords    String[] // For better search matching
+  keywords String[] // For better search matching
 
-  priority    Int      @default(0)
-  active      Boolean  @default(true)
+  priority Int     @default(0)
+  active   Boolean @default(true)
 
-  viewCount   Int      @default(0)
-  helpfulCount Int     @default(0)
-  notHelpfulCount Int  @default(0)
+  viewCount       Int @default(0)
+  helpfulCount    Int @default(0)
+  notHelpfulCount Int @default(0)
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  // Audit fields
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  category    AIKnowledgeCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-
-  feedback    AIChatFeedback[]
+  category AIKnowledgeCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  feedback AIChatFeedback[]
 
   @@index([active, priority])
   @@map("ai_knowledge_articles")
@@ -907,22 +1243,23 @@ model AIKnowledgeArticle {
 
 /// AI Chat Feedback
 model AIChatFeedback {
-  id          String   @id @default(cuid())
-  articleId   String?
-  userId      String?
+  id String @id @default(uuid())
 
-  rating      Int      // 1-5 stars
-  isHelpful   Boolean
+  articleId String?
+  userId    String?
 
-  comment     String?  @db.Text
+  rating    Int // 1-5 stars
+  isHelpful Boolean
 
-  userQuery   String?  @db.Text
-  aiResponse  String?  @db.Text
+  comment String? @db.Text
 
-  createdAt   DateTime @default(now())
+  userQuery  String? @db.Text
+  aiResponse String? @db.Text
 
-  article     AIKnowledgeArticle? @relation(fields: [articleId], references: [id])
-  user        Profile? @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+
+  article AIKnowledgeArticle? @relation(fields: [articleId], references: [id])
+  user    Profile?            @relation(fields: [userId], references: [id])
 
   @@map("ai_chat_feedback")
 }
@@ -933,32 +1270,37 @@ model AIChatFeedback {
 
 /// Devotee Testimonials
 model Testimonial {
-  id          String   @id @default(cuid())
-  userId      String?  @unique
-  profile     Profile? @relation(fields: [userId], references: [id])
+  id String @id @default(uuid())
 
-  name        String
-  location    String?
+  userId  String?  @unique
+  profile Profile? @relation(fields: [userId], references: [id])
 
-  title       String?
-  content     String   @db.Text
-  contentKannada String? @db.Text
+  name     String
+  location String?
 
-  rating      Int?     // 1-5 stars
+  title     String?
+  content   String  @db.Text
+  contentKn String? @db.Text
 
-  imageUrl    String?
+  rating Int? // 1-5 stars
 
-  isApproved  Boolean  @default(false)
-  isFeatured  Boolean  @default(false)
-  isPublished Boolean  @default(false)
+  // Media
+  imageId String?
+  image   Media?  @relation(fields: [imageId], references: [id])
 
-  approvedBy  String?
-  approvedAt  DateTime?
+  approved  Boolean @default(false)
+  featured  Boolean @default(false)
+  published Boolean @default(false)
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  approvedBy String?
+  approvedAt DateTime?
 
-  @@index([isApproved, isPublished])
+  // Audit fields
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@index([approved, published])
   @@map("testimonials")
 }
 
@@ -968,25 +1310,28 @@ model Testimonial {
 
 /// Contact Enquiries
 model ContactEnquiry {
-  id          String       @id @default(cuid())
-  name        String
-  email       String
-  phone       String?
-  subject     String?
+  id String @id @default(uuid())
 
-  message     String       @db.Text
-  category    EnquiryCategory @default(GENERAL)
+  name    String
+  email   String
+  phone   String?
+  subject String?
+
+  message  String          @db.Text
+  category EnquiryCategory @default(GENERAL)
 
   status      EnquiryStatus @default(NEW)
   assignedTo  String?
-  response    String?      @db.Text
+  response    String?       @db.Text
   respondedAt DateTime?
 
-  ipAddress   String?
-  userAgent   String?
+  ipAddress String?
+  userAgent String?
 
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  // Audit fields
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   @@index([status])
   @@map("contact_enquiries")
@@ -1016,20 +1361,21 @@ enum EnquiryStatus {
 
 /// Email Logs
 model EmailLog {
-  id          String   @id @default(cuid())
-  to          String
-  subject     String
-  body        String   @db.Text
+  id String @id @default(uuid())
 
-  status      EmailStatus @default(PENDING)
-  sentAt      DateTime?
-  failedAt    DateTime?
+  to      String
+  subject String
+  body    String @db.Text
+
+  status       EmailStatus @default(PENDING)
+  sentAt       DateTime?
+  failedAt     DateTime?
   errorMessage String?
 
-  templateId  String?
+  templateId   String?
   templateData Json?
 
-  createdAt   DateTime @default(now())
+  createdAt DateTime @default(now())
 
   @@index([to, createdAt])
   @@map("email_logs")
@@ -1044,19 +1390,20 @@ enum EmailStatus {
 
 /// Audit Log
 model AuditLog {
-  id          String   @id @default(cuid())
-  userId      String?
-  action      String
-  entityType  String?
-  entityId    String?
+  id String @id @default(uuid())
 
-  oldData     Json?
-  newData     Json?
+  userId     String?
+  action     String
+  entityType String?
+  entityId   String?
 
-  ipAddress   String?
-  userAgent   String?
+  oldData Json?
+  newData Json?
 
-  createdAt   DateTime @default(now())
+  ipAddress String?
+  userAgent String?
+
+  createdAt DateTime @default(now())
 
   @@index([userId])
   @@index([entityType, entityId])
@@ -1070,19 +1417,21 @@ model AuditLog {
 
 /// Document Category
 model DocumentCategory {
-  id          String   @id @default(cuid())
+  id String @id @default(uuid())
+
   name        String
-  nameKannada String?
+  nameKn      String?
   description String?
   icon        String?
-  
-  order       Int      @default(0)
-  active      Boolean  @default(true)
 
-  documents   Document[]
+  order  Int     @default(0)
+  active Boolean @default(true)
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  // Audit fields
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  documents Document[]
 
   @@index([active, order])
   @@map("document_categories")
@@ -1090,30 +1439,32 @@ model DocumentCategory {
 
 /// Document
 model Document {
-  id           String   @id @default(cuid())
-  title        String
-  titleKannada String?
-  
-  description  String?
-  
-  categoryId   String
-  category     DocumentCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  
-  fileUrl      String
-  fileName     String?
-  fileSize     Int?     // in bytes
-  mimeType     String?
-  
-  isFeatured   Boolean  @default(false)
-  active       Boolean  @default(true)
-  order        Int      @default(0)
-  
-  downloadCount Int     @default(0)
-  
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id String @id @default(uuid())
+
+  title       String
+  titleKn     String?
+  description String?
+
+  categoryId String
+  category   DocumentCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  fileUrl  String
+  fileName String?
+  fileSize Int? // bytes
+  mimeType String?
+
+  featured Boolean @default(false)
+  active   Boolean @default(true)
+  order    Int     @default(0)
+
+  downloadCount Int @default(0)
+
+  // Audit fields
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   @@index([categoryId, active])
-  @@index([isFeatured])
+  @@index([featured])
   @@map("documents")
 }
