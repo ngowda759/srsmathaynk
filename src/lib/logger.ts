@@ -4,8 +4,23 @@
  * Provides structured logging with levels: debug, info, warn, error
  * All logs are written to stderr in JSON format for easy parsing.
  * 
- * DO NOT use console.log, console.error, etc. in application code.
- * Always use this logger instead.
+ * Features:
+ * - Correlation IDs for request tracing
+ * - Child loggers with inherited context
+ * - No console.log in application code
+ * 
+ * Usage:
+ * ```typescript
+ * // In request handler
+ * const requestId = logger.generateRequestId();
+ * const reqLogger = logger.withCorrelationId(requestId);
+ * 
+ * // Pass to service/repository
+ * reqLogger.info("Processing request");
+ * 
+ * // Repository layer logs with same correlation ID
+ * reqLogger.info("Query completed", { rows: 5 });
+ * ```
  */
 
 import type { LogLevel, LogContext, LogEntry } from "@/types";
@@ -34,6 +49,28 @@ let config: LoggerConfig = {
 };
 
 // ============================================================================
+// Request ID Management
+// ============================================================================
+
+let currentRequestId: string | null = null;
+
+/**
+ * Generate a unique request ID for tracing
+ */
+function generateRequestId(): string {
+  const timestamp = Date.now().toString(36);
+  const random = Math.random().toString(36).substring(2, 9);
+  return `${timestamp}-${random}`;
+}
+
+/**
+ * Get the current request ID
+ */
+export function getRequestId(): string | null {
+  return currentRequestId;
+}
+
+// ============================================================================
 // Internal Functions
 // ============================================================================
 
@@ -47,6 +84,7 @@ function formatEntry(entry: LogEntry): string {
     level: entry.level.toUpperCase(),
     service: config.service,
     environment: config.environment,
+    ...(entry.requestId && { requestId: entry.requestId }),
     message: entry.message,
     ...(entry.context && { context: entry.context }),
     ...(entry.error && {
@@ -84,7 +122,8 @@ function createEntry(
   level: LogLevel,
   message: string,
   context?: LogContext,
-  error?: Error
+  error?: Error,
+  requestId?: string | null
 ): LogEntry {
   return {
     level,
@@ -92,6 +131,7 @@ function createEntry(
     context,
     error,
     timestamp: new Date().toISOString(),
+    requestId: requestId || currentRequestId,
   };
 }
 
@@ -112,6 +152,33 @@ export const logger = {
    */
   getConfig(): Readonly<LoggerConfig> {
     return { ...config };
+  },
+
+  /**
+   * Generate a unique request ID
+   */
+  generateRequestId(): string {
+    return generateRequestId();
+  },
+
+  /**
+   * Create a logger with correlation ID
+   */
+  withCorrelationId(requestId: string): ChildLogger {
+    return new ChildLogger(this, { requestId });
+  },
+
+  /**
+   * Set current request ID for the scope
+   */
+  withRequestId<T>(requestId: string, fn: () => T): T {
+    const previousId = currentRequestId;
+    currentRequestId = requestId;
+    try {
+      return fn();
+    } finally {
+      currentRequestId = previousId;
+    }
   },
 
   /**
@@ -154,7 +221,7 @@ export const logger = {
 // Child Logger
 // ============================================================================
 
-class ChildLogger {
+export class ChildLogger {
   private parent: typeof logger;
   private context: LogContext;
 
@@ -181,6 +248,10 @@ class ChildLogger {
 
   child(additionalContext: LogContext): ChildLogger {
     return new ChildLogger(this.parent, { ...this.context, ...additionalContext });
+  }
+
+  withCorrelationId(requestId: string): ChildLogger {
+    return this.parent.withCorrelationId(requestId);
   }
 }
 

@@ -2,6 +2,10 @@
  * Shared Application Types
  */
 
+// Re-export interfaces
+export * from "./interfaces";
+export * from "./service-interfaces";
+
 // ============================================================================
 // Pagination Types
 // ============================================================================
@@ -10,6 +14,11 @@ export interface PaginationOptions {
   page?: number;
   limit?: number;
   offset?: number;
+}
+
+export interface CursorPaginationOptions {
+  cursor?: string;
+  limit?: number;
 }
 
 export interface PaginationMeta {
@@ -21,9 +30,21 @@ export interface PaginationMeta {
   hasPrevPage: boolean;
 }
 
+export interface CursorPaginationMeta {
+  cursor: string | null;
+  hasMore: boolean;
+  limit: number;
+  total?: number;
+}
+
 export interface PaginatedResult<T> {
   data: T[];
   meta: PaginationMeta;
+}
+
+export interface CursorPaginatedResult<T> {
+  data: T[];
+  meta: CursorPaginationMeta;
 }
 
 // ============================================================================

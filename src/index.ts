@@ -1,13 +1,15 @@
 /**
  * Sri Raghavendra Swamy Matha Portal - Core Infrastructure
  * 
- * Phase 3.1 - Core Infrastructure
+ * Phase 3.1 - Core Infrastructure (Enhanced)
  * 
  * Architecture (per ADR-001):
  * 
  * UI → Server Actions / Route Handlers → Service Layer → Repository Layer → Prisma ORM
  * 
  * This module exports all core infrastructure components.
+ * 
+ * Infrastructure sprint scope only - no feature implementations.
  */
 
 // Re-export all modules for convenient imports
@@ -22,6 +24,7 @@ export * from "./lib/filter";
 export * from "./lib/sorting";
 export * from "./lib/response";
 export * from "./lib/transaction";
+export * from "./lib/search";
 
 // Layers (per ADR-001)
 // - UI never communicates directly with Prisma
@@ -33,40 +36,63 @@ export { BaseService, compose, chain, mapResults, withErrorHandling } from "./se
 // Validation (per ADR-017)
 export * from "./validators";
 
-// Middleware
+// Middleware (includes rate limiting placeholder)
 export * from "./middleware";
 
 // Example usage:
-// 
+//
 // In a route handler:
 //
-// import { withAuth, withAuthz, withErrorHandler } from "@/middleware";
+// import { withAuth, withAuthz, withErrorHandler, withApiRateLimit } from "@/middleware";
 // import { validators } from "@/validators";
-// import { BaseService, compose } from "@/services";
+// import { BaseService } from "@/services";
 // import { BaseRepository } from "@/repositories";
 // import { logger } from "@/lib/logger";
-// import { PaginationError } from "@/errors";
-// 
+// import { SearchBuilder } from "@/lib/search";
+// import { executeWithRetry } from "@/lib/transaction";
+// import { ErrorCodes } from "@/errors";
+//
 // class AnnouncementService extends BaseService {
-//   constructor(private repo: AnnouncementRepository) {
+//   constructor(private repo: IAnnouncementRepository) {
 //     super("Announcement");
 //   }
-// 
+//
 //   async getAll(params: QueryParams) {
 //     this.logInfo("Fetching announcements", params);
-//     const result = await this.repo.findAll(params);
+//     
+//     const builder = new SearchBuilder()
+//       .contains("title", params.search || "")
+//       .equals("isActive", true);
+//     
+//     const result = await this.repo.findAll({
+//       where: builder.build(),
+//       pagination: { page: params.page, limit: params.limit }
+//     });
+//     
 //     return this.success(result);
 //   }
 // }
-// 
+//
 // export const GET = withErrorHandler(
-//   withAuth(
-//     withAuthz({ roles: ["ADMIN", "SUPER_ADMIN"] })(
-//       async (req, { user }) => {
-//         const params = parseQueryParams(req);
-//         const service = new AnnouncementService(new AnnouncementRepository());
-//         return service.getAll(params);
-//       }
+//   withApiRateLimit(
+//     withAuth(
+//       withAuthz({ roles: ["ADMIN", "SUPER_ADMIN"] })(
+//         async (req, { user }) => {
+//           const params = parseQueryParams(req);
+//           const service = new AnnouncementService(new PrismaAnnouncementRepository());
+//           return service.getAll(params);
+//         }
+//       )
 //     )
 //   )
 // );
+//
+// Transaction with retry (for bookings, donations):
+//
+// const result = await executeWithRetry(async (tx) => {
+//   // Create booking
+//   const booking = await tx.booking.create({ data: bookingData });
+//   // Update availability
+//   await tx.seva.update({ where: { id: sevaId }, data: { ... } });
+//   return booking;
+// }, { maxRetries: 3 });

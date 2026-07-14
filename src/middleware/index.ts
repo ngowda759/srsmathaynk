@@ -1,17 +1,19 @@
 /**
  * Middleware
  * 
- * Provides middleware functions for authentication, authorization, and error handling.
+ * Provides middleware functions for authentication, authorization, error handling, and rate limiting.
  * 
  * Usage in API routes:
  * ```typescript
- * import { withAuth, withAuthz, withErrorHandler } from "@/middleware";
+ * import { withAuth, withAuthz, withErrorHandler, withApiRateLimit } from "@/middleware";
  * 
  * const handler = withErrorHandler(
- *   withAuth(
- *     withAuthz(["ADMIN", "SUPER_ADMIN"])(async (req, { user }) => {
- *       // Handle request with authenticated user
- *     })
+ *   withApiRateLimit(
+ *     withAuth(
+ *       withAuthz(["ADMIN", "SUPER_ADMIN"])(async (req, { user }) => {
+ *         // Handle request with authenticated user
+ *       })
+ *     )
  *   )
  * );
  * ```
@@ -436,3 +438,24 @@ export function createRoute<
 
   return handler;
 }
+
+// ============================================================================
+// Rate Limiting Exports
+// ============================================================================
+
+export {
+  createRateLimitMiddleware,
+  checkRateLimit,
+  getRateLimitHeaders,
+  DEFAULT_RATE_LIMITS,
+  withAnonymousRateLimit,
+  withAuthenticatedRateLimit,
+  withAdminRateLimit,
+  withApiRateLimit,
+} from "./rate-limit";
+
+export type {
+  RateLimitConfig,
+  RateLimitInfo,
+  RateLimitResult,
+} from "./rate-limit";
