@@ -16,6 +16,7 @@
 export * from "./common"
 export * from "./user"
 export * from "./temple"
+export * from "./aaradhane"
 export * from "./events"
 export * from "./sevas"
 export * from "./donations"

@@ -389,6 +389,68 @@ model PoojaSchedule {
 }
 
 // =============================================================================
+// AARADHANE (SPECIAL POOJAS)
+// =============================================================================
+
+/// Aaradhane (Special Poojas/Deities)
+model Aaradhane {
+  id          String   @id @default(cuid())
+  title       String
+  titleKannada String?
+
+  deityName   String?
+  guruName    String?
+
+  description String?  @db.Text
+  significance String?  @db.Text
+
+  startDate   DateTime?
+  endDate     DateTime?
+
+  imageUrl    String?
+  thumbnailUrl String?
+
+  rituals     String[] // Array of ritual names
+  offerings   String[] // Array of offerings
+
+  isFeatured  Boolean  @default(false)
+  isActive    Boolean  @default(true)
+  order       Int      @default(0)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  sevas       AaradhaneSeva[]
+
+  @@index([isFeatured, isActive])
+  @@map("aaradhanes")
+}
+
+/// Aaradhane Seva (Associated Sevas)
+model AaradhaneSeva {
+  id           String   @id @default(cuid())
+  aaradhaneId  String
+
+  name         String
+  nameKannada  String?
+  description  String?  @db.Text
+
+  amount       Float    @default(0)
+  currency     String   @default("INR")
+
+  isActive     Boolean  @default(true)
+  order        Int      @default(0)
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  aaradhane    Aaradhane @relation(fields: [aaradhaneId], references: [id], onDelete: Cascade)
+
+  @@index([aaradhaneId])
+  @@map("aaradhane_sevas")
+}
+
+// =============================================================================
 // SEVAS (SERVICES)
 // =============================================================================
 
