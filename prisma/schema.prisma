@@ -1063,3 +1063,57 @@ model AuditLog {
   @@index([createdAt])
   @@map("audit_logs")
 }
+
+// =============================================================================
+// DOCUMENTS
+// =============================================================================
+
+/// Document Category
+model DocumentCategory {
+  id          String   @id @default(cuid())
+  name        String
+  nameKannada String?
+  description String?
+  icon        String?
+  
+  order       Int      @default(0)
+  active      Boolean  @default(true)
+
+  documents   Document[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([active, order])
+  @@map("document_categories")
+}
+
+/// Document
+model Document {
+  id           String   @id @default(cuid())
+  title        String
+  titleKannada String?
+  
+  description  String?
+  
+  categoryId   String
+  category     DocumentCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  
+  fileUrl      String
+  fileName     String?
+  fileSize     Int?     // in bytes
+  mimeType     String?
+  
+  isFeatured   Boolean  @default(false)
+  active       Boolean  @default(true)
+  order        Int      @default(0)
+  
+  downloadCount Int     @default(0)
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([categoryId, active])
+  @@index([isFeatured])
+  @@map("documents")
+}

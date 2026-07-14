@@ -1,23 +1,26 @@
 /**
- * Announcements API
- * GET - List announcements
- * POST - Create announcement
+ * Gallery API
+ * GET - List gallery items
+ * POST - Create gallery item
  */
 import { NextRequest, NextResponse } from "next/server"
 import { createServerClient } from "@/lib/supabase/server"
-import { announcementsRepository } from "@/repositories/announcements"
+import { galleryRepository } from "@/repositories/gallery"
 import { prisma } from "@/lib/db"
 import { z } from "zod"
 
-const createAnnouncementSchema = z.object({
+const createGalleryItemSchema = z.object({
   title: z.string().min(1).max(200),
-  content: z.string().min(1),
-  excerpt: z.string().max(300).optional(),
-  type: z.enum(["GENERAL", "EVENT", "DONATION", "FESTIVAL", "MAINTENANCE", "URGENT"]).optional().default("GENERAL"),
-  priority: z.enum(["LOW", "NORMAL", "HIGH", "URGENT"]).optional().default("NORMAL"),
-  isPinned: z.boolean().optional().default(false),
-  active: z.boolean().optional().default(true),
-  expiresAt: z.string().datetime().optional().nullable(),
+  titleKannada: z.string().max(200).optional(),
+  description: z.string().optional(),
+  category: z.string().optional(),
+  type: z.enum(["IMAGE", "VIDEO"]).optional().default("IMAGE"),
+  url: z.string().min(1),
+  thumbnailUrl: z.string().url().optional(),
+  altText: z.string().optional(),
+  isFeatured: z.boolean().optional().default(false),
+  isActive: z.boolean().optional().default(true),
+  order: z.number().int().min(0).optional(),
 })
 
 async function checkAdmin() {
@@ -35,31 +38,31 @@ async function checkAdmin() {
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
+    const category = searchParams.get("category")
     const type = searchParams.get("type")
-    const priority = searchParams.get("priority")
-    const pinned = searchParams.get("pinned")
+    const featured = searchParams.get("featured")
     const active = searchParams.get("active")
     const search = searchParams.get("search")
     const page = parseInt(searchParams.get("page") || "1")
-    const limit = parseInt(searchParams.get("limit") || "10")
+    const limit = parseInt(searchParams.get("limit") || "20")
 
     const filters: any = {}
+    if (category) filters.category = category
     if (type) filters.type = type
-    if (priority) filters.priority = priority
-    if (pinned !== null) filters.isPinned = pinned === "true"
-    if (active !== null) filters.active = active === "true"
+    if (featured === "true") filters.isFeatured = true
+    if (active !== "false") filters.isActive = true
     if (search) filters.search = search
 
-    const result = await announcementsRepository.findAll({
+    const result = await galleryRepository.findAll({
       page,
       limit,
       filters,
-      orderBy: { field: "createdAt", order: "desc" }
+      orderBy: { field: "order", order: "asc" }
     })
 
     return NextResponse.json(result.data)
   } catch (error) {
-    console.error("Error fetching announcements:", error)
+    console.error("Error fetching gallery:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
@@ -73,7 +76,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const validation = createAnnouncementSchema.safeParse(body)
+    const validation = createGalleryItemSchema.safeParse(body)
 
     if (!validation.success) {
       return NextResponse.json(
@@ -82,22 +85,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Get author from session
-    const supabase = await createServerClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    
-    const input: any = { ...validation.data }
-    if (input.expiresAt) input.expiresAt = new Date(input.expiresAt)
-    if (user) input.authorId = (await prisma.profile.findUnique({ where: { userId: user.id } }))?.id
-
-    const result = await announcementsRepository.create(input)
+    const result = await galleryRepository.create(validation.data)
     if (!result.success) {
       return NextResponse.json({ error: result.error }, { status: 500 })
     }
 
     return NextResponse.json(result.data, { status: 201 })
   } catch (error) {
-    console.error("Error creating announcement:", error)
+    console.error("Error creating gallery item:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
