@@ -1,59 +1,104 @@
-import { NextRequest, NextResponse } from "next/server";
-import { submitTestimonial, getApprovedTestimonials, getPendingTestimonials, approveTestimonial } from "@/services/chat.service";
+/**
+ * Testimonials API
+ * GET - List testimonials
+ * POST - Create testimonial
+ */
+import { NextRequest, NextResponse } from "next/server"
+import { createServerClient } from "@/lib/supabase/server"
+import { testimonialsRepository } from "@/repositories/testimonials"
+import { prisma } from "@/lib/db"
+import { z } from "zod"
 
-export async function POST(request: NextRequest) {
+const createTestimonialSchema = z.object({
+  name: z.string().min(1).max(200),
+  location: z.string().max(200).optional(),
+  title: z.string().max(200).optional(),
+  content: z.string().min(10),
+  rating: z.number().int().min(1).max(5).optional(),
+  imageUrl: z.string().url().optional(),
+})
+
+async function checkAdmin() {
+  const supabase = await createServerClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return false
+  
+  const profile = await prisma.profile.findUnique({
+    where: { userId: user.id }
+  })
+  
+  return profile?.role === "SUPER_ADMIN" || profile?.role === "ADMIN" || profile?.role === "STAFF"
+}
+
+export async function GET(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { sessionId, name, city, experience, rating, permissionToPublish } = body;
+    const { searchParams } = new URL(request.url)
+    const featured = searchParams.get("featured")
+    const approved = searchParams.get("approved")
+    const page = parseInt(searchParams.get("page") || "1")
+    const limit = parseInt(searchParams.get("limit") || "10")
 
-    // Validate required fields
-    if (!name || !experience || rating === undefined) {
-      return NextResponse.json(
-        { error: "Name, experience, and rating are required" },
-        { status: 400 }
-      );
-    }
+    const filters: any = {}
+    if (featured === "true") filters.isFeatured = true
+    if (approved !== "false") filters.isApproved = true
+    if (approved === "all") delete filters.isApproved
 
-    // Validate rating
-    if (typeof rating !== "number" || rating < 1 || rating > 5) {
-      return NextResponse.json(
-        { error: "Rating must be a number between 1 and 5" },
-        { status: 400 }
-      );
-    }
+    const result = await testimonialsRepository.findAll({
+      page,
+      limit,
+      filters,
+    })
 
-    const testimonialId = await submitTestimonial({
-      sessionId: sessionId || "",
-      name: name.trim(),
-      city: city?.trim() || "",
-      experience: experience.trim(),
-      rating,
-      permissionToPublish: permissionToPublish || false,
-    });
-
-    return NextResponse.json({
-      success: true,
-      id: testimonialId,
-      message: "Thank you for sharing your experience! Your testimonial will be reviewed by our team.",
-    });
+    return NextResponse.json(result.data)
   } catch (error) {
-    console.error("Testimonial submission error:", error);
-    return NextResponse.json(
-      { error: "Failed to submit testimonial. Please try again." },
-      { status: 500 }
-    );
+    console.error("Error fetching testimonials:", error)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
 
-export async function GET() {
+export async function POST(request: NextRequest) {
   try {
-    const testimonials = await getApprovedTestimonials();
-    return NextResponse.json({ testimonials });
+    const body = await request.json()
+    const validation = createTestimonialSchema.safeParse(body)
+
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: "Invalid input", details: validation.error.errors },
+        { status: 400 }
+      )
+    }
+
+    // Get user profile if authenticated
+    const supabase = await createServerClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    let userId: string | undefined
+
+    if (user) {
+      const profile = await prisma.profile.findUnique({
+        where: { userId: user.id }
+      })
+      userId = profile?.id
+    }
+
+    // Create testimonial (requires approval)
+    const result = await testimonialsRepository.create({
+      ...validation.data,
+      userId,
+      isApproved: false,
+      isFeatured: false,
+      isPublished: false,
+    })
+
+    if (!result.success) {
+      return NextResponse.json({ error: result.error }, { status: 500 })
+    }
+
+    return NextResponse.json({
+      ...result.data,
+      message: "Testimonial submitted for approval"
+    }, { status: 201 })
   } catch (error) {
-    console.error("Get testimonials error:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch testimonials" },
-      { status: 500 }
-    );
+    console.error("Error creating testimonial:", error)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
