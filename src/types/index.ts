@@ -6,6 +6,9 @@
 export * from "./interfaces";
 export * from "./service-interfaces";
 
+// Re-export announcement types
+export * from "./announcement";
+
 // ============================================================================
 // Pagination Types
 // ============================================================================

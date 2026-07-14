@@ -80,9 +80,37 @@ export interface IRepository<T extends { id: string }> {
 
 // Announcement Repository
 export interface IAnnouncementRepository extends IRepository<AnnouncementDomain> {
+  // Basic queries
   findActive(): Promise<AnnouncementDomain[]>;
   findByType(type: string): Promise<AnnouncementDomain[]>;
   findPublished(): Promise<AnnouncementDomain[]>;
+  
+  // Enhanced queries
+  findAll(params?: {
+    page?: number;
+    limit?: number;
+    sortBy?: string;
+    sortOrder?: "asc" | "desc";
+    includeDeleted?: boolean;
+  }): Promise<{ data: AnnouncementDomain[]; total: number }>;
+  search(params: {
+    query: string;
+    type?: string;
+    isActive?: boolean;
+    limit?: number;
+    offset?: number;
+  }): Promise<AnnouncementDomain[]>;
+  paginate(params: {
+    cursor?: string;
+    limit?: number;
+    type?: string;
+    isActive?: boolean;
+    includeDeleted?: boolean;
+  }): Promise<{ data: AnnouncementDomain[]; nextCursor: string | null }>;
+  
+  // Soft delete operations
+  softDelete(id: string): Promise<AnnouncementDomain>;
+  restore(id: string): Promise<AnnouncementDomain>;
 }
 
 // Seva Repository
@@ -142,14 +170,21 @@ export interface AnnouncementDomain {
   id: string;
   title: string;
   content: string;
+  excerpt: string | null;
   type: "GENERAL" | "EVENT" | "DONATION" | "FESTIVAL" | "MAINTENANCE" | "URGENT";
   priority: "LOW" | "NORMAL" | "HIGH" | "URGENT";
+  isPinned: boolean;
   isActive: boolean;
+  status: "DRAFT" | "PUBLISHED" | "ARCHIVED" | "SCHEDULED";
   publishAt: Date | null;
   expiresAt: Date | null;
+  authorId: string | null;
   createdAt: Date;
   updatedAt: Date;
   deletedAt: Date | null;
+  
+  // Computed fields (not persisted)
+  slug: string;
 }
 
 export interface SevaDomain {
