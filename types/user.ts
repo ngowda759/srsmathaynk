@@ -2,52 +2,105 @@
  * User types - Supabase compatible
  */
 
-export type UserRole =
-  | "SUPER_ADMIN"
-  | "ADMIN"
-  | "PRIEST"
-  | "USER"
-  | "super_admin"
-  | "temple_admin"
-  | "priest"
-  | "staff"
-  | "volunteer"
-  | "devotee"
-  | "billing"
-  | "Billing"
-  | "Super Admin"
-  | "Temple Admin"
-  | "Priest"
-  | "Office Staff"
-  | "Volunteer"
+// User roles matching Prisma schema
+export type UserRole = "DEVOTEE" | "VOLUNTEER" | "PRIEST" | "STAFF" | "ADMIN" | "SUPER_ADMIN"
+
+// Legacy role mapping for backwards compatibility
+export const LegacyRoleMap: Record<string, UserRole> = {
+  "SUPER_ADMIN": "SUPER_ADMIN",
+  "super_admin": "SUPER_ADMIN",
+  "Super Admin": "SUPER_ADMIN",
+  "ADMIN": "ADMIN",
+  "admin": "ADMIN",
+  "Temple Admin": "ADMIN",
+  "temple_admin": "ADMIN",
+  "PRIEST": "PRIEST",
+  "priest": "PRIEST",
+  "STAFF": "STAFF",
+  "staff": "STAFF",
+  "Office Staff": "STAFF",
+  "office_staff": "STAFF",
+  "VOLUNTEER": "VOLUNTEER",
+  "volunteer": "VOLUNTEER",
+  "Volunteer": "VOLUNTEER",
+  "DEVOTEE": "DEVOTEE",
+  "devotee": "DEVOTEE",
+  "User": "DEVOTEE",
+  "user": "DEVOTEE",
+  "BILLING": "ADMIN", // Map billing to admin
+  "billing": "ADMIN",
+}
 
 // Normalized roles for consistent access control
-export type NormalizedRole = "super_admin" | "admin" | "billing" | "volunteer" | "devotee"
+export type NormalizedRole = "super_admin" | "admin" | "staff" | "priest" | "volunteer" | "devotee"
 
 export function normalizeRole(role: string): NormalizedRole {
-  const roleLower = role.toLowerCase().replace(/\s+/g, "_")
+  const normalized = LegacyRoleMap[role] || "DEVOTEE"
   
-  switch (roleLower) {
-    case "super_admin":
-    case "super admin":
+  switch (normalized) {
+    case "SUPER_ADMIN":
       return "super_admin"
-    case "billing":
-      return "billing"
-    case "admin":
-    case "temple_admin":
-    case "temple admin":
-    case "priest":
-    case "staff":
-    case "office_staff":
-    case "office staff":
+    case "ADMIN":
       return "admin"
-    case "volunteer":
+    case "STAFF":
+      return "staff"
+    case "PRIEST":
+      return "priest"
+    case "VOLUNTEER":
       return "volunteer"
-    case "user":
-    case "devotee":
+    case "DEVOTEE":
     default:
       return "devotee"
   }
+}
+
+// Permission levels
+export type Permission = 
+  | "manage_users"
+  | "manage_settings"
+  | "manage_content"
+  | "manage_events"
+  | "manage_sevas"
+  | "manage_donations"
+  | "manage_gallery"
+  | "view_reports"
+  | "manage_billing"
+  | "access_admin"
+  | "access_dashboard"
+
+// Role to permissions mapping
+export const RolePermissions: Record<NormalizedRole, Permission[]> = {
+  super_admin: [
+    "manage_users", "manage_settings", "manage_content", "manage_events",
+    "manage_sevas", "manage_donations", "manage_gallery", "view_reports",
+    "manage_billing", "access_admin", "access_dashboard"
+  ],
+  admin: [
+    "manage_content", "manage_events", "manage_sevas", "manage_donations",
+    "manage_gallery", "view_reports", "access_admin", "access_dashboard"
+  ],
+  staff: [
+    "manage_events", "manage_sevas", "manage_gallery", "access_dashboard"
+  ],
+  priest: [
+    "manage_events", "manage_sevas", "access_dashboard"
+  ],
+  volunteer: [
+    "access_dashboard"
+  ],
+  devotee: []
+}
+
+export function hasPermission(role: NormalizedRole, permission: Permission): boolean {
+  return RolePermissions[role]?.includes(permission) ?? false
+}
+
+export function hasAnyPermission(role: NormalizedRole, permissions: Permission[]): boolean {
+  return permissions.some(p => hasPermission(role, p))
+}
+
+export function hasAllPermissions(role: NormalizedRole, permissions: Permission[]): boolean {
+  return permissions.every(p => hasPermission(role, p))
 }
 
 export interface UserProfile {
@@ -56,9 +109,12 @@ export interface UserProfile {
   name: string | null
   email: string
   phone: string | null
-  role: string
+  role: UserRole
   avatarUrl: string | null
   address: string | null
+  emailVerified: boolean
+  isActive: boolean
+  lastLoginAt: Date | string | null
   createdAt: Date | string
   updatedAt: Date | string
 }

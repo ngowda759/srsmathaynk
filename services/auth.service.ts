@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { createClient as createServerClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/db'
 import type { User } from '@supabase/supabase-js'
+import { UserRole } from '@/types/user'
 
 export interface RegisterData {
   name: string
@@ -17,9 +18,11 @@ export interface UserProfile {
   id: string
   email: string
   name: string | null
-  role: string
+  role: UserRole
   phone: string | null
   avatarUrl: string | null
+  emailVerified: boolean
+  isActive: boolean
 }
 
 export interface AuthResult {
@@ -59,7 +62,7 @@ class AuthService {
             email: data.user.email!,
             name,
             phone,
-            role: 'USER',
+            role: 'DEVOTEE',
           },
         })
 
@@ -69,9 +72,11 @@ class AuthService {
             id: data.user.id,
             email: data.user.email!,
             name,
-            role: 'USER',
+            role: 'DEVOTEE' as UserRole,
             phone,
             avatarUrl: null,
+            emailVerified: false,
+            isActive: true,
           },
         }
       }
@@ -104,15 +109,25 @@ class AuthService {
           where: { userId: data.user.id },
         })
 
+        // Update last login
+        if (profile) {
+          await prisma.profile.update({
+            where: { userId: data.user.id },
+            data: { lastLoginAt: new Date() },
+          })
+        }
+
         return {
           success: true,
           user: {
             id: data.user.id,
             email: data.user.email!,
             name: profile?.name || data.user.user_metadata?.name || null,
-            role: profile?.role || 'USER',
+            role: (profile?.role as UserRole) || 'DEVOTEE',
             phone: profile?.phone || data.user.user_metadata?.phone || null,
             avatarUrl: profile?.avatarUrl || null,
+            emailVerified: profile?.emailVerified || false,
+            isActive: profile?.isActive !== false,
           },
         }
       }
@@ -138,7 +153,58 @@ class AuthService {
     try {
       const supabase = createClient()
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/callback?next=/reset-password`,
+        redirectTo: `${typeof window !== 'undefined' ? window.location.origin : ''}/auth/callback?next=/reset-password&type=recovery`,
+      })
+
+      if (error) {
+        return { success: false, error: error.message }
+      }
+
+      return { success: true }
+    } catch (error) {
+      return { success: false, error: String(error) }
+    }
+  }
+
+  /**
+   * Send email verification
+   */
+  async sendEmailVerification(): Promise<{ success: boolean; error?: string }> {
+    try {
+      const supabase = createClient()
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+      })
+
+      if (error) {
+        return { success: false, error: error.message }
+      }
+
+      return { success: true }
+    } catch (error) {
+      return { success: false, error: String(error) }
+    }
+  }
+
+  /**
+   * Update password (for logged in users)
+   */
+  async updatePassword(currentPassword: string, newPassword: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      const supabase = createClient()
+      
+      // First verify current password
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: (await supabase.auth.getUser()).data.user?.email || '',
+        password: currentPassword,
+      })
+
+      if (signInError) {
+        return { success: false, error: 'Current password is incorrect' }
+      }
+
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword,
       })
 
       if (error) {
@@ -179,9 +245,11 @@ class AuthService {
         id: profile.id,
         email: profile.email,
         name: profile.name,
-        role: profile.role,
+        role: profile.role as UserRole,
         phone: profile.phone,
         avatarUrl: profile.avatarUrl,
+        emailVerified: profile.emailVerified,
+        isActive: profile.isActive,
       }
     } catch {
       return null
@@ -191,7 +259,7 @@ class AuthService {
   /**
    * Update user profile
    */
-  async updateProfile(userId: string, data: Partial<UserProfile>): Promise<AuthResult> {
+  async updateProfile(userId: string, data: { name?: string; phone?: string; avatarUrl?: string }): Promise<AuthResult> {
     try {
       const profile = await prisma.profile.update({
         where: { userId },
@@ -204,9 +272,11 @@ class AuthService {
           id: profile.id,
           email: profile.email,
           name: profile.name,
-          role: profile.role,
+          role: profile.role as UserRole,
           phone: profile.phone,
           avatarUrl: profile.avatarUrl,
+          emailVerified: profile.emailVerified,
+          isActive: profile.isActive,
         },
       }
     } catch (error) {
@@ -217,7 +287,7 @@ class AuthService {
   /**
    * Check if user has required role
    */
-  async hasRole(userId: string, requiredRoles: string[]): Promise<boolean> {
+  async hasRole(userId: string, requiredRoles: UserRole[]): Promise<boolean> {
     try {
       const profile = await prisma.profile.findUnique({
         where: { userId },
@@ -225,9 +295,62 @@ class AuthService {
 
       if (!profile) return false
 
-      return requiredRoles.includes(profile.role)
+      return requiredRoles.includes(profile.role as UserRole)
     } catch {
       return false
+    }
+  }
+
+  /**
+   * Create or update profile on login (auto-provisioning)
+   */
+  async syncProfile(user: User): Promise<UserProfile | null> {
+    try {
+      const existingProfile = await prisma.profile.findUnique({
+        where: { userId: user.id },
+      })
+
+      if (existingProfile) {
+        // Update last login
+        await prisma.profile.update({
+          where: { userId: user.id },
+          data: { lastLoginAt: new Date() },
+        })
+        return {
+          id: existingProfile.id,
+          email: existingProfile.email,
+          name: existingProfile.name,
+          role: existingProfile.role as UserRole,
+          phone: existingProfile.phone,
+          avatarUrl: existingProfile.avatarUrl,
+          emailVerified: existingProfile.emailVerified,
+          isActive: existingProfile.isActive,
+        }
+      }
+
+      // Create new profile
+      const newProfile = await prisma.profile.create({
+        data: {
+          userId: user.id,
+          email: user.email!,
+          name: user.user_metadata?.name || null,
+          phone: user.user_metadata?.phone || null,
+          role: 'DEVOTEE',
+        },
+      })
+
+      return {
+        id: newProfile.id,
+        email: newProfile.email,
+        name: newProfile.name,
+        role: newProfile.role as UserRole,
+        phone: newProfile.phone,
+        avatarUrl: newProfile.avatarUrl,
+        emailVerified: newProfile.emailVerified,
+        isActive: newProfile.isActive,
+      }
+    } catch {
+      return null
     }
   }
 }

@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react"
 import { createClient, User } from "@supabase/supabase-js"
 import { authService, RegisterData, UserProfile } from "@/services/auth.service"
-import { normalizeRole, NormalizedRole, UserRole } from "@/types/user"
+import { normalizeRole, NormalizedRole, UserRole, Permission, hasPermission } from "@/types/user"
 
 // Create a Supabase client for client-side use
 const supabase = createClient(
@@ -21,12 +21,18 @@ interface AuthContextType {
   logout: () => Promise<void>
   forgotPassword: (email: string) => Promise<{ success: boolean; error?: string }>
   refreshProfile: () => Promise<void>
+  updatePassword: (currentPassword: string, newPassword: string) => Promise<{ success: boolean; error?: string }>
+  // Legacy permission checks
   canAccessAdmin: boolean
   canAccessSettings: boolean
   canAccessFinance: boolean
   canManageUsers: boolean
   canAccessBilling: boolean
   canAccessAdministration: boolean
+  // New granular permissions
+  can: (permission: Permission) => boolean
+  canAny: (permissions: Permission[]) => boolean
+  canAll: (permissions: Permission[]) => boolean
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -129,15 +135,25 @@ export function AuthProvider({ children }: AuthProviderProps) {
     return authService.forgotPassword(email)
   }
 
+  async function updatePassword(currentPassword: string, newPassword: string) {
+    return authService.updatePassword(currentPassword, newPassword)
+  }
+
   // Role-based permissions
-  const normalizedRole = profile?.role ? normalizeRole(profile.role as UserRole) : "devotee"
+  const normalizedRole = profile?.role ? normalizeRole(profile.role) : "devotee"
   
+  // Legacy permission checks (for backwards compatibility)
   const canAccessAdmin = normalizedRole !== "devotee" && normalizedRole !== "volunteer"
   const canAccessSettings = normalizedRole === "super_admin" || normalizedRole === "admin"
-  const canAccessFinance = normalizedRole === "super_admin" || normalizedRole === "billing"
+  const canAccessFinance = normalizedRole === "super_admin" || normalizedRole === "admin"
   const canManageUsers = normalizedRole === "super_admin"
-  const canAccessBilling = normalizedRole === "super_admin" || normalizedRole === "billing"
+  const canAccessBilling = normalizedRole === "super_admin" || normalizedRole === "admin"
   const canAccessAdministration = normalizedRole === "super_admin"
+
+  // New granular permissions
+  const can = (permission: Permission) => hasPermission(normalizedRole, permission)
+  const canAny = (permissions: Permission[]) => permissions.some(p => hasPermission(normalizedRole, p))
+  const canAll = (permissions: Permission[]) => permissions.every(p => hasPermission(normalizedRole, p))
 
   return (
     <AuthContext.Provider
@@ -151,12 +167,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
         logout,
         forgotPassword,
         refreshProfile,
+        updatePassword,
         canAccessAdmin,
         canAccessSettings,
         canAccessFinance,
         canManageUsers,
         canAccessBilling,
         canAccessAdministration,
+        can,
+        canAny,
+        canAll,
       }}
     >
       {children}
