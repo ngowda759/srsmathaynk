@@ -1,41 +1,22 @@
-import { getCountFromServer, collection } from "firebase/firestore";
+/**
+ * Dashboard Service - Firebase has been removed
+ * This service now returns zero counts as no backend is available
+ */
 
-import { db } from "@/lib/firebase";
 import { DashboardStats } from "@/types/dashboard";
 
 class DashboardService {
   async getStats(): Promise<DashboardStats> {
-    if (!db) throw new Error("Firebase not configured");
-    
-    const [
-      users,
-      events,
-      sevas,
-      gallery,
-      announcements,
-      timings,
-      donations,
-      bookings,
-    ] = await Promise.all([
-      getCountFromServer(collection(db, "users")),
-      getCountFromServer(collection(db, "events")),
-      getCountFromServer(collection(db, "sevas")),
-      getCountFromServer(collection(db, "gallery")),
-      getCountFromServer(collection(db, "announcements")),
-      getCountFromServer(collection(db, "timings")),
-      getCountFromServer(collection(db, "donations")),
-      getCountFromServer(collection(db, "sevaBookings")),
-    ]);
-
+    console.log("[DashboardService] Firebase removed - returning zero counts");
     return {
-      totalUsers: users.data().count,
-      totalEvents: events.data().count,
-      totalSevas: sevas.data().count,
-      totalGalleryImages: gallery.data().count,
-      totalAnnouncements: announcements.data().count,
-      totalTimings: timings.data().count,
-      totalDonations: donations.data().count,
-      totalSevaBookings: bookings.data().count,
+      totalUsers: 0,
+      totalEvents: 0,
+      totalSevas: 0,
+      totalGalleryImages: 0,
+      totalAnnouncements: 0,
+      totalTimings: 0,
+      totalDonations: 0,
+      totalSevaBookings: 0,
     };
   }
 }

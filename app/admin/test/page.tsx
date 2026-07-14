@@ -1,7 +1,7 @@
 "use client";
 
-import { addDoc, collection, serverTimestamp } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+
+
 
 export default function FirebaseTestPage() {
   async function handleTest() {

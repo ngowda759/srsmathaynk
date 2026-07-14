@@ -1,4 +1,7 @@
-import { Timestamp } from "firebase/firestore";
+/**
+ * Event types - Firebase has been removed
+ * Using Date instead of Firebase Timestamp
+ */
 
 export type EventStatus =
   | "Upcoming"
@@ -7,16 +10,13 @@ export type EventStatus =
 
 export interface TempleEvent {
   id?: string;
-
   title: string;
-
   description: string;
-
   location: string;
 
   // Event Dates
-  startDate: Timestamp;
-  endDate: Timestamp;
+  startDate: Date | string;
+  endDate: Date | string;
 
   // Event Time
   startTime?: string;
@@ -35,6 +35,6 @@ export interface TempleEvent {
   // Legacy (will be removed later)
   status: EventStatus;
 
-  createdAt?: Timestamp;
-  updatedAt?: Timestamp;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
 }

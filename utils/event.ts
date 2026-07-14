@@ -1,8 +1,12 @@
-import { Timestamp } from "firebase/firestore";
+/**
+ * Event utilities - Firebase has been removed
+ * Using standard Date objects instead of Firebase Timestamp
+ */
+
 import { TempleEvent, EventStatus } from "@/types/event";
 
 // Define a type for date values that can come from various sources
-type DateValue = Date | number | string | { toDate: () => Date } | Timestamp | null | undefined;
+type DateValue = Date | number | string | null | undefined;
 
 // Helper function to convert date to Date object
 function toDate(date: DateValue): Date {
@@ -10,10 +14,6 @@ function toDate(date: DateValue): Date {
   if (date instanceof Date) return date;
   if (typeof date === 'string') return new Date(date);
   if (typeof date === 'number') return new Date(date);
-  if (typeof date === 'object' && 'toDate' in date && typeof date.toDate === 'function') {
-    return date.toDate();
-  }
-  if (date instanceof Timestamp) return date.toDate();
   return new Date(0);
 }
 

@@ -1,4 +1,7 @@
-import { Timestamp } from "firebase/firestore";
+/**
+ * User types - Firebase has been removed
+ * Using Date instead of Firebase Timestamp
+ */
 
 export type UserRole =
   | "super_admin"
@@ -45,50 +48,30 @@ export function normalizeRole(role: UserRole): NormalizedRole {
 
 export interface UserProfile {
   uid: string;
-
   name: string;
-
   email: string;
-
   phone: string;
-
   role: UserRole;
-
   templeId: string;
-
   profileImage: string;
-
   isApproved: boolean;
-
   isActive: boolean;
-
   emailVerified: boolean;
-
-  lastLogin: Timestamp | null;
-
-  createdAt: Timestamp;
-
-  updatedAt: Timestamp;
+  lastLogin: Date | string | null;
+  createdAt: Date | string;
+  updatedAt: Date | string;
 }
 
 export interface TempleUser {
   id: string;
-
   name: string;
-
   email: string;
-
   phone: string;
-
   role: UserRole;
-
   active: boolean;
-
   isActive: boolean;
-
-  createdAt: Timestamp;
-
-  updatedAt: Timestamp;
+  createdAt: Date | string;
+  updatedAt: Date | string;
 }
 
 export type TempleUserCreate = Pick<TempleUser, "name" | "email" | "phone" | "role" | "active">;

@@ -1,14 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import Breadcrumb from "@/components/calendar/Breadcrumb";
 import { Building2, Users, Heart, Calendar, BookOpen, MapPin, Phone, Mail } from "lucide-react";
 import Link from "next/link";
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
 
 interface Activity {
   id: string;
@@ -99,38 +97,10 @@ const defaultData: AboutUsData = {
 };
 
 export default function AboutPage() {
-  const [data, setData] = useState<AboutUsData>(defaultData);
-  const [loading, setLoading] = useState(true);
+  const [data] = useState<AboutUsData>(defaultData);
 
-  useEffect(() => {
-    async function loadData() {
-      try {
-        if (!db) {
-          setLoading(false);
-          return;
-        }
-        const docRef = doc(db, "settings", "aboutUs");
-        const docSnap = await getDoc(docRef);
-
-        if (docSnap.exists()) {
-          setData({ ...defaultData, ...docSnap.data() } as AboutUsData);
-        }
-      } catch (error) {
-        console.error("Error loading about us data:", error);
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadData();
-  }, []);
-
-  if (loading) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="h-12 w-12 animate-spin rounded-full border-4 border-amber-600 border-t-transparent" />
-      </div>
-    );
-  }
+  // Firebase has been removed - use default data only
+  // If dynamic data loading is needed, it will be implemented via Supabase in Sprint 1
 
   return (
     <>

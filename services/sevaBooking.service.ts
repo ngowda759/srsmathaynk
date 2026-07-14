@@ -1,88 +1,40 @@
-import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, orderBy, query, serverTimestamp, updateDoc, where } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+/**
+ * Seva Booking Service - Firebase has been removed
+ * This service now returns empty arrays as no backend is available
+ */
+
 import { SevaBooking, SevaBookingRequest, SevaBookingStatus, PaymentStatus } from "@/types/seva-booking";
 
 const COLLECTION_NAME = "sevaBookings";
 
-function docToBooking(docSnap: any): SevaBooking {
-  const data = docSnap.data();
-  return {
-    id: docSnap.id,
-    sevaId: data.sevaId || "",
-    sevaTitle: data.sevaTitle || "",
-    sevaAmount: data.sevaAmount ?? 0,
-    userId: data.userId || "",
-    userName: data.userName || "",
-    userEmail: data.userEmail || "",
-    userPhone: data.userPhone || "",
-    preferredDate: data.preferredDate || "",
-    notes: data.notes || "",
-    status: data.status || "pending",
-    paymentReference: data.paymentReference || "",
-    paymentStatus: data.paymentStatus || "pending",
-    paymentDate: data.paymentDate || "",
-    paymentMethod: data.paymentMethod || "",
-    createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : data.createdAt || "",
-    updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate().toISOString() : data.updatedAt || "",
-  };
-}
-
 class SevaBookingService {
   async createBooking(data: SevaBookingRequest): Promise<string> {
-    if (!db) throw new Error("Firebase not configured");
-    const docRef = await addDoc(collection(db, COLLECTION_NAME), { ...data, status: "pending", paymentReference: "", paymentStatus: "pending", paymentDate: "", paymentMethod: "", createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
-    return docRef.id;
+    throw new Error("Booking creation is not available - backend services have been removed");
   }
 
   async getAllBookings(): Promise<SevaBooking[]> {
-    if (!db) return [];
-    try {
-      const q = query(collection(db, COLLECTION_NAME), orderBy("createdAt", "desc"));
-      const snapshot = await getDocs(q);
-      return snapshot.docs.map(docToBooking);
-    } catch (error) {
-      console.error("[BookingService] Error:", error);
-      return [];
-    }
+    console.log("[SevaBookingService] Firebase removed - returning empty array");
+    return [];
   }
 
   async getBookingsByUser(userId: string): Promise<SevaBooking[]> {
-    if (!db) return [];
-    try {
-      const q = query(collection(db, COLLECTION_NAME), where("userId", "==", userId), orderBy("createdAt", "desc"));
-      const snapshot = await getDocs(q);
-      return snapshot.docs.map(docToBooking);
-    } catch (error) {
-      console.error("[BookingService] Error:", error);
-      return [];
-    }
+    return [];
   }
 
   async getBookingById(bookingId: string): Promise<SevaBooking | null> {
-    if (!db) return null;
-    try {
-      const snapshot = await getDoc(doc(db, COLLECTION_NAME, bookingId));
-      if (!snapshot.exists()) return null;
-      return docToBooking(snapshot);
-    } catch (error) {
-      console.error("[BookingService] Error:", error);
-      return null;
-    }
+    return null;
   }
 
   async updateBookingStatus(bookingId: string, status: SevaBookingStatus): Promise<void> {
-    if (!db) throw new Error("Firebase not configured");
-    await updateDoc(doc(db, COLLECTION_NAME, bookingId), { status, updatedAt: serverTimestamp() });
+    throw new Error("Booking status update is not available - backend services have been removed");
   }
 
   async updatePayment(bookingId: string, paymentData: { paymentReference: string; paymentStatus: PaymentStatus; paymentMethod: string; }): Promise<void> {
-    if (!db) throw new Error("Firebase not configured");
-    await updateDoc(doc(db, COLLECTION_NAME, bookingId), { paymentReference: paymentData.paymentReference, paymentStatus: paymentData.paymentStatus, paymentMethod: paymentData.paymentMethod, paymentDate: paymentData.paymentStatus === "completed" ? new Date().toISOString() : "", status: paymentData.paymentStatus === "completed" ? "confirmed" : "pending", updatedAt: serverTimestamp() });
+    throw new Error("Payment update is not available - backend services have been removed");
   }
 
   async deleteBooking(bookingId: string): Promise<void> {
-    if (!db) throw new Error("Firebase not configured");
-    await deleteDoc(doc(db, COLLECTION_NAME, bookingId));
+    throw new Error("Booking deletion is not available - backend services have been removed");
   }
 }
 

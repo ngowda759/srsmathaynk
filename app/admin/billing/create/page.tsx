@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, Plus, Trash2, Save } from "lucide-react";
 import toast from "react-hot-toast";
 import Link from "next/link";
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+
+
 
 import AdminPageHeader from "@/components/admin/common/AdminPageHeader";
 import { Button } from "@/components/ui/button";

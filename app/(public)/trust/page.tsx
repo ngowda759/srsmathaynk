@@ -1,9 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Image from "next/image";
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import Breadcrumb from "@/components/calendar/Breadcrumb";
@@ -48,42 +46,13 @@ const defaultData: TrustCommitteeData = {
 };
 
 export default function TrustCommitteePage() {
-  const [data, setData] = useState<TrustCommitteeData>(defaultData);
-  const [loading, setLoading] = useState(true);
+  const [data] = useState<TrustCommitteeData>(defaultData);
 
-  useEffect(() => {
-    async function loadData() {
-      try {
-        if (!db) {
-          setLoading(false);
-          return;
-        }
-        const docRef = doc(db, "settings", "trustCommittee");
-        const docSnap = await getDoc(docRef);
-
-        if (docSnap.exists()) {
-          setData({ ...defaultData, ...docSnap.data() } as TrustCommitteeData);
-        }
-      } catch (error) {
-        console.error("Error loading trust committee data:", error);
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadData();
-  }, []);
+  // Firebase has been removed - use default data only
 
   const activeMembers = data.members
     .filter((m) => m.isActive)
     .sort((a, b) => a.order - b.order);
-
-  if (loading) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="h-12 w-12 animate-spin rounded-full border-4 border-amber-600 border-t-transparent" />
-      </div>
-    );
-  }
 
   return (
     <>

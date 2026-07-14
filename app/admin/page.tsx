@@ -8,8 +8,8 @@ import {
   BookOpen, Clock, Users, HandCoins, ArrowRight, Sparkles
 } from "lucide-react";
 import { type LucideIcon } from "lucide-react";
-import { db } from "@/lib/firebase";
-import { collection, getDocs } from "firebase/firestore";
+
+
 import { useAuth } from "@/hooks/useAuth";
 
 interface DashboardStats {

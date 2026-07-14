@@ -1,46 +1,32 @@
-import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, serverTimestamp, updateDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+/**
+ * Seva Service - Firebase has been removed
+ * This service now returns empty arrays as no backend is available
+ */
+
 import { Seva, SevaRequest } from "@/types/seva";
 
 const COLLECTION = "sevas";
 
 class SevaService {
   async getAllSevas(): Promise<Seva[]> {
-    if (!db) return [];
-    try {
-      const snapshot = await getDocs(collection(db, COLLECTION));
-      return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })) as Seva[];
-    } catch (error) {
-      console.error("[SevaService] Error:", error);
-      return [];
-    }
+    console.log("[SevaService] Firebase removed - returning empty array");
+    return [];
   }
 
   async getSevaById(id: string): Promise<Seva | null> {
-    if (!db) return null;
-    try {
-      const snapshot = await getDoc(doc(db, COLLECTION, id));
-      if (!snapshot.exists()) return null;
-      return { id: snapshot.id, ...snapshot.data() } as Seva;
-    } catch (error) {
-      console.error("[SevaService] Error:", error);
-      return null;
-    }
+    return null;
   }
 
   async createSeva(data: SevaRequest) {
-    if (!db) throw new Error("Firebase not configured");
-    return addDoc(collection(db, COLLECTION), { ...data, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
+    throw new Error("Seva creation is not available - backend services have been removed");
   }
 
   async updateSeva(id: string, data: Partial<SevaRequest>) {
-    if (!db) throw new Error("Firebase not configured");
-    return updateDoc(doc(db, COLLECTION, id), { ...data, updatedAt: serverTimestamp() });
+    throw new Error("Seva update is not available - backend services have been removed");
   }
 
   async deleteSeva(id: string) {
-    if (!db) throw new Error("Firebase not configured");
-    return deleteDoc(doc(db, COLLECTION, id));
+    throw new Error("Seva deletion is not available - backend services have been removed");
   }
 }
 

@@ -3,8 +3,8 @@
 import { useState, useEffect } from "react";
 import { Plus, Trash2, Save, RotateCcw, Eye, EyeOff, CreditCard, Smartphone, Building } from "lucide-react";
 import toast from "react-hot-toast";
-import { doc, getDoc, setDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+
+
 import { FinanceSettings, SpecialSeva, defaultFinanceSettings } from "@/types/finance";
 
 const SETTINGS_DOC = "financeSettings";

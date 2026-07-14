@@ -1,13 +1,11 @@
 "use client";
 
 import Image from "next/image";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import SectionHeading from "@/components/common/SectionHeading";
 import Breadcrumb from "@/components/calendar/Breadcrumb";
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
 import { ShieldCheck, Flame, Building2, Users, UtensilsCrossed, Volume2, Sparkles } from "lucide-react";
 
 interface Facility {
@@ -124,38 +122,9 @@ const colorOptions = [
 ];
 
 export default function FacilitiesPage() {
-  const [data, setData] = useState<FacilitiesData>(defaultData);
-  const [loading, setLoading] = useState(true);
+  const [data] = useState<FacilitiesData>(defaultData);
 
-  useEffect(() => {
-    async function loadData() {
-      try {
-        if (!db) {
-          setLoading(false);
-          return;
-        }
-        const docRef = doc(db, "settings", "facilities");
-        const docSnap = await getDoc(docRef);
-
-        if (docSnap.exists()) {
-          setData({ ...defaultData, ...docSnap.data() } as FacilitiesData);
-        }
-      } catch (error) {
-        console.error("Error loading facilities data:", error);
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadData();
-  }, []);
-
-  if (loading) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="h-12 w-12 animate-spin rounded-full border-4 border-amber-600 border-t-transparent" />
-      </div>
-    );
-  }
+  // Firebase has been removed - use default data only
 
   return (
     <>

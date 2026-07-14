@@ -13,7 +13,7 @@ import {
   AlertCircle,
   CheckCircle
 } from "lucide-react";
-import { db } from "@/lib/firebase";
+
 import { 
   collection, 
   getDocs, 
@@ -22,7 +22,7 @@ import {
   deleteDoc, 
   doc,
   serverTimestamp 
-} from "firebase/firestore";
+} 
 
 interface ChatTrainingData {
   id: string;

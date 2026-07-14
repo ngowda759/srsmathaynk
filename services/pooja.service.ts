@@ -1,100 +1,46 @@
-import {
-  collection,
-  doc,
-  getDocs,
-  getDoc,
-  addDoc,
-  updateDoc,
-  deleteDoc,
-  query,
-  orderBy,
-  serverTimestamp,
-} from "firebase/firestore";
-import { db } from "@/lib/firebase";
+/**
+ * Pooja Service - Firebase has been removed
+ * This service now returns empty arrays as no backend is available
+ */
+
 import { DailyPooja, PoojaStats } from "@/types/pooja";
 
 const COLLECTION_NAME = "dailyPoojas";
 
-function docToPooja(docSnap: any): DailyPooja {
-  const data = docSnap.data();
-  return {
-    id: docSnap.id,
-    title: data.title || "",
-    description: data.description || "",
-    startTime: data.startTime || "",
-    duration: data.duration || "",
-    category: data.category || "Morning",
-    sevaAmount: data.sevaAmount ?? 0,
-    isActive: data.isActive ?? true,
-    displayOrder: data.displayOrder ?? 0,
-    days: data.days || ["All"],
-    notes: data.notes || "",
-    createdAt: data.createdAt?.toDate
-      ? data.createdAt.toDate().toISOString()
-      : data.createdAt || new Date().toISOString(),
-    createdBy: data.createdBy || "",
-  };
-}
-
 export const poojaService = {
   async getPoojas(): Promise<DailyPooja[]> {
-      if (!db) throw new Error("Firebase not configured");
-    const q = query(
-      collection(db, COLLECTION_NAME),
-      orderBy("displayOrder", "asc")
-    );
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(docToPooja);
+    console.log("[PoojaService] Firebase removed - returning empty array");
+    return [];
   },
 
   async getPoojaById(id: string): Promise<DailyPooja | null> {
-      if (!db) throw new Error("Firebase not configured");
-    const docRef = doc(db, COLLECTION_NAME, id);
-    const docSnap = await getDoc(docRef);
-    if (!docSnap.exists()) return null;
-    return docToPooja(docSnap);
+    return null;
   },
 
   async createPooja(
     data: Omit<DailyPooja, "id" | "createdAt" | "createdBy">,
     userEmail: string
   ): Promise<string> {
-    if (!db) throw new Error("Firebase not configured");
-    const docRef = await addDoc(collection(db, COLLECTION_NAME), {
-      ...data,
-      createdBy: userEmail,
-      createdAt: serverTimestamp(),
-    });
-    return docRef.id;
+    throw new Error("Pooja creation is not available - backend services have been removed");
   },
 
   async updatePooja(
     id: string,
     data: Partial<Omit<DailyPooja, "id" | "createdAt" | "createdBy">>
   ): Promise<void> {
-    if (!db) throw new Error("Firebase not configured");
-    const docRef = doc(db, COLLECTION_NAME, id);
-    await updateDoc(docRef, data);
+    throw new Error("Pooja update is not available - backend services have been removed");
   },
 
   async deletePooja(id: string): Promise<void> {
-      if (!db) throw new Error("Firebase not configured");
-    const docRef = doc(db, COLLECTION_NAME, id);
-    await deleteDoc(docRef);
+    throw new Error("Pooja deletion is not available - backend services have been removed");
   },
 
   async getStats(): Promise<PoojaStats> {
-      if (!db) throw new Error("Firebase not configured");
-    const poojas = await this.getPoojas();
-    const byCategory: Record<string, number> = {};
-    poojas.forEach((p) => {
-      byCategory[p.category] = (byCategory[p.category] || 0) + 1;
-    });
     return {
-      total: poojas.length,
-      active: poojas.filter((p) => p.isActive).length,
-      byCategory,
-      withSeva: poojas.filter((p) => p.sevaAmount > 0).length,
+      total: 0,
+      active: 0,
+      byCategory: {},
+      withSeva: 0,
     };
   },
 };

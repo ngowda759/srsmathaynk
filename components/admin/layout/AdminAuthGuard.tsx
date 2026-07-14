@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
-import { getFirebaseConfigStatus } from "@/lib/firebase";
 
 type Permission = 
   | "admin" 
@@ -78,36 +77,7 @@ export default function AdminAuthGuard({
     return <LoadingSpinner />;
   }
 
-  // Check if Firebase is configured
-  const firebaseStatus = getFirebaseConfigStatus();
-  
-  // If Firebase is not configured, show a helpful message
-  if (!firebaseStatus.isValid) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-amber-50/50 via-orange-50/30 to-stone-50">
-        <div className="text-center p-8 max-w-md">
-          <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-          <h1 className="text-2xl font-bold text-stone-800 mb-2">Firebase Not Configured</h1>
-          <p className="text-stone-600 mb-4">
-            Please configure Firebase in your environment variables to use this application.
-          </p>
-          <p className="text-sm text-stone-500 mb-6">
-            Missing: {firebaseStatus.missingFields.join(", ")}
-          </p>
-          <button
-            onClick={() => router.push("/")}
-            className="px-6 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors"
-          >
-            Go to Home
-          </button>
-        </div>
-      </div>
-    );
-  }
+  // Firebase has been removed - skip Firebase config check
 
   // Check if user is logged in
   if (!user) {

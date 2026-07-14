@@ -4,8 +4,8 @@ import { useState, useEffect } from "react";
 import { ArrowLeft, Save, RotateCcw, Plus, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
 import Link from "next/link";
-import { doc, getDoc, setDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+
+
 import AdminPageHeader from "@/components/admin/common/AdminPageHeader";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -30,8 +30,8 @@ interface FuturePlansData {
   plans: FuturePlan[];
 }
 
-const COLLECTION = "settings";
-const DOCUMENT = "futurePlans";
+// Firebase has been removed - using default data only
+// Settings will be managed via Supabase in Sprint 1
 
 const iconOptions = [
   { value: "building", label: "Building" },
@@ -106,62 +106,13 @@ export default function FuturePlansSettingsPage() {
   const [data, setData] = useState<FuturePlansData>(defaultData);
 
   useEffect(() => {
-    async function loadData() {
-        if (!db) {
-          // Use default data when Firebase is not configured
-          setLoading(false);
-          return;
-        }
-      try {
-        const docRef = doc(db, COLLECTION, DOCUMENT);
-        const docSnap = await getDoc(docRef);
-
-        if (docSnap.exists()) {
-          // Merge with defaults to ensure all fields are present
-          const firebaseData = docSnap.data();
-          setData({
-            ...defaultData,
-            ...firebaseData,
-            plans: firebaseData.plans && firebaseData.plans.length > 0 
-              ? firebaseData.plans 
-              : defaultData.plans,
-          } as FuturePlansData);
-        } else {
-          // No data in Firebase - use defaults
-          setData(defaultData);
-        }
-      } catch (error) {
-        console.error("Error loading data:", error);
-        toast.error("Failed to load settings");
-        // Fall back to defaults on error
-        setData(defaultData);
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadData();
+    // Firebase has been removed - use default data only
+    setLoading(false);
   }, []);
 
   async function saveData() {
-    if (!db) {
-      toast.error("Firebase not configured");
-      return;
-    }
-    setSaving(true);
-    try {
-      const docRef = doc(db, COLLECTION, DOCUMENT);
-      await setDoc(docRef, {
-        ...data,
-        updatedAt: new Date().toISOString(),
-      }, { merge: true });
-
-      toast.success("Future Plans saved successfully!");
-    } catch (error) {
-      console.error("Error saving data:", error);
-      toast.error("Failed to save settings");
-    } finally {
-      setSaving(false);
-    }
+    // Firebase has been removed - save functionality not available
+    toast.error("Settings save is not available - backend services have been removed");
   }
 
   function updateField(field: keyof FuturePlansData, value: string) {

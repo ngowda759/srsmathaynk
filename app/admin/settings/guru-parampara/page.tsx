@@ -4,8 +4,8 @@ import { useState, useEffect } from "react";
 import { ArrowLeft, Save, RotateCcw, Plus, Trash2, GripVertical } from "lucide-react";
 import toast from "react-hot-toast";
 import Link from "next/link";
-import { doc, getDoc, setDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+
+
 import AdminPageHeader from "@/components/admin/common/AdminPageHeader";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";

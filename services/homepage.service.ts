@@ -1,11 +1,8 @@
-import {
-  doc,
-  getDoc,
-  serverTimestamp,
-  setDoc,
-} from "firebase/firestore";
+/**
+ * Homepage Service - Firebase has been removed
+ * This service now returns default config as no backend is available
+ */
 
-import { db } from "@/lib/firebase";
 import { HomepageConfig } from "@/types/homepage";
 
 const COLLECTION = "homepage";
@@ -13,34 +10,12 @@ const DOCUMENT = "config";
 
 class HomepageService {
   async getHomepage(): Promise<HomepageConfig> {
-      if (!db) throw new Error("Firebase not configured");
-    const ref = doc(db, COLLECTION, DOCUMENT);
-    const snap = await getDoc(ref);
-
-    if (!snap.exists()) {
-      return this.getDefaultConfig();
-    }
-
-    return {
-      ...this.getDefaultConfig(),
-      ...(snap.data() as HomepageConfig),
-    };
+    console.log("[HomepageService] Firebase removed - returning default config");
+    return this.getDefaultConfig();
   }
 
   async saveHomepage(data: HomepageConfig): Promise<void> {
-      if (!db) throw new Error("Firebase not configured");
-    const ref = doc(db, COLLECTION, DOCUMENT);
-
-    await setDoc(
-      ref,
-      {
-        ...data,
-        updatedAt: serverTimestamp(),
-      },
-      {
-        merge: true,
-      }
-    );
+    throw new Error("Homepage save is not available - backend services have been removed");
   }
 
   getDefaultConfig(): HomepageConfig {

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAIProvider } from "@/lib/ai/provider";
 import { getSystemPrompt } from "@/lib/ai/settings";
-import { generateFirebaseResponse, getTempleInfo } from "@/lib/ai/firebaseChat";
 import { AIMessage, ChatRequest, ChatResponse } from "@/types/ai";
 
 // Rate limiting (simple in-memory implementation)
@@ -99,7 +98,7 @@ export async function POST(request: NextRequest) {
     // Try AI provider first, fallback to Firebase
     const provider = getAIProvider();
     let responseMessage: AIMessage;
-    let responseSource: "ai" | "firebase" = "ai";
+    let responseSource: "ai" = "ai";
 
     if (provider.isConfigured()) {
       // Use AI provider with configurable system prompt
@@ -131,35 +130,15 @@ export async function POST(request: NextRequest) {
           latency,
         };
       } catch (aiError) {
-        // AI call failed, log and fallback to Firebase
+        // AI call failed
         logError("AI provider call", aiError, { requestId, provider: provider.getProviderName() });
-        console.log(`[Chat API] [${requestId}] Falling back to Firebase due to AI error`);
-        
-        // Get temple info from Firebase
-        const templeInfo = await getTempleInfo();
-        
-        // Generate response using Firebase data
-        responseMessage = await generateFirebaseResponse(
-          lastUserMessage.content,
-          templeInfo,
-          detectedLanguage || "en"
-        );
-        responseSource = "firebase";
+        console.log(`[Chat API] [${requestId}] AI provider failed`);
+        throw aiError;
       }
     } else {
-      // AI not configured, use Firebase-based response
-      console.log(`[Chat API] [${requestId}] AI not configured (placeholder key or missing config), using Firebase fallback`);
-      
-      // Get temple info from Firebase
-      const templeInfo = await getTempleInfo();
-      
-      // Generate response using Firebase data
-      responseMessage = await generateFirebaseResponse(
-        lastUserMessage.content,
-        templeInfo,
-        detectedLanguage || "en"
-      );
-      responseSource = "firebase";
+      // AI not configured
+      console.log(`[Chat API] [${requestId}] AI not configured`);
+      throw new Error("AI service not configured. Please set up AI provider credentials.");
     }
 
     const totalLatency = Date.now() - startTime;

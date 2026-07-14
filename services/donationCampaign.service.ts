@@ -1,17 +1,7 @@
-import {
-  addDoc,
-  collection,
-  deleteDoc,
-  doc,
-  getDoc,
-  getDocs,
-  orderBy,
-  query,
-  serverTimestamp,
-  updateDoc,
-} from "firebase/firestore";
-
-import { db } from "@/lib/firebase";
+/**
+ * Donation Campaign Service - Firebase has been removed
+ * This service now returns empty arrays as no backend is available
+ */
 
 import {
   DonationCampaign,
@@ -20,122 +10,31 @@ import {
 
 const COLLECTION_NAME = "donation_campaigns";
 
-function toDate(value: any): string {
-  if (!value) return "";
-
-  if (value?.toDate) {
-    return value.toDate().toISOString();
-  }
-
-  return value;
-}
-
-function docToCampaign(docSnap: any): DonationCampaign {
-  const data = docSnap.data();
-
-  return {
-    id: docSnap.id,
-
-    title: data.title ?? "",
-
-    description: data.description ?? "",
-
-    imageUrl: data.imageUrl ?? "",
-
-    suggestedAmount: Number(
-      data.suggestedAmount ?? 0
-    ),
-
-    active: data.active ?? true,
-
-    displayOrder: Number(
-      data.displayOrder ?? 0
-    ),
-
-    createdAt: toDate(data.createdAt),
-
-    updatedAt: toDate(data.updatedAt),
-  };
-}
-
 class DonationCampaignService {
-  async getCampaigns(): Promise<
-    DonationCampaign[]
-  > {
-    if (!db) throw new Error("Firebase not configured");
-    const snapshot = await getDocs(
-      query(
-        collection(db, COLLECTION_NAME),
-        orderBy("displayOrder", "asc")
-      )
-    );
-
-    return snapshot.docs.map(docToCampaign);
+  async getCampaigns(): Promise<DonationCampaign[]> {
+    console.log("[DonationCampaignService] Firebase removed - returning empty array");
+    return [];
   }
 
-  async getActiveCampaigns(): Promise<
-    DonationCampaign[]
-  > {
-    const campaigns =
-      await this.getCampaigns();
-
-    return campaigns.filter(
-      (campaign) => campaign.active
-    );
+  async getActiveCampaigns(): Promise<DonationCampaign[]> {
+    return [];
   }
 
-  async getCampaignById(
-    id: string
-  ): Promise<DonationCampaign | null> {
-    if (!db) throw new Error("Firebase not configured");
-    const snapshot = await getDoc(
-      doc(db, COLLECTION_NAME, id)
-    );
-
-    if (!snapshot.exists()) {
-      return null;
-    }
-
-    return docToCampaign(snapshot);
+  async getCampaignById(id: string): Promise<DonationCampaign | null> {
+    return null;
   }
 
-  async createCampaign(
-    data: DonationCampaignRequest
-  ) {
-    if (!db) throw new Error("Firebase not configured");
-    const docRef = await addDoc(
-      collection(db, COLLECTION_NAME),
-      {
-        ...data,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      }
-    );
-
-    return docRef.id;
+  async createCampaign(data: DonationCampaignRequest) {
+    throw new Error("Campaign creation is not available - backend services have been removed");
   }
 
-  async updateCampaign(
-    id: string,
-    data: Partial<DonationCampaignRequest>
-  ) {
-    if (!db) throw new Error("Firebase not configured");
-    await updateDoc(
-      doc(db, COLLECTION_NAME, id),
-      {
-        ...data,
-        updatedAt: serverTimestamp(),
-      }
-    );
+  async updateCampaign(id: string, data: Partial<DonationCampaignRequest>) {
+    throw new Error("Campaign update is not available - backend services have been removed");
   }
 
   async deleteCampaign(id: string) {
-    if (!db) throw new Error("Firebase not configured");
-    await deleteDoc(
-      doc(db, COLLECTION_NAME, id)
-    );
+    throw new Error("Campaign deletion is not available - backend services have been removed");
   }
 }
 
-export const donationCampaignService =
-  new DonationCampaignService();
+export const donationCampaignService = new DonationCampaignService();

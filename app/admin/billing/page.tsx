@@ -10,8 +10,8 @@ import { Button } from "@/components/ui/button";
 import { useFinanceSettings } from "@/hooks/useFinanceSettings";
 import { billingService } from "@/services/billing.service";
 import { Bill, BillStatus } from "@/types/billing";
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+
+
 import AdminAuthGuard from "@/components/admin/layout/AdminAuthGuard";
 
 const SETTINGS_DOC = "financeSettings";

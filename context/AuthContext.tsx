@@ -8,9 +8,7 @@ import {
   ReactNode,
 } from "react";
 
-import { User, onAuthStateChanged } from "firebase/auth";
-
-import { auth } from "@/lib/firebase";
+import { User } from "@/lib/auth";
 import {
   authService,
   RegisterData,
@@ -80,49 +78,11 @@ export function AuthProvider({
   }
 
   useEffect(() => {
-    // Skip Firebase auth if not properly configured
-    if (!auth) {
-      console.log("Firebase auth not configured - skipping auth listener");
-      // Use setTimeout to avoid synchronous state update during effect
-      setTimeout(() => setLoading(false), 0);
-      return;
-    }
-
-    let unsubscribe: (() => void) | undefined;
-
-    try {
-      unsubscribe = onAuthStateChanged(
-        auth,
-        async (firebaseUser) => {
-          // Use setTimeout to avoid synchronous state update during effect
-          setTimeout(() => setLoading(true), 0);
-
-          try {
-            setUser(firebaseUser);
-
-            if (firebaseUser) {
-              await loadProfile(firebaseUser.uid);
-            } else {
-              setProfile(null);
-            }
-          } catch (err) {
-            console.error("Auth state change error:", err);
-            setProfile(null);
-          } finally {
-            setTimeout(() => setLoading(false), 0);
-          }
-        }
-      );
-    } catch (err) {
-      console.error("Firebase auth initialization error:", err);
-      setTimeout(() => setLoading(false), 0);
-    }
-
-    return () => {
-      if (unsubscribe) {
-        unsubscribe();
-      }
-    };
+    // Firebase auth has been removed - no authentication available
+    console.log("Firebase auth has been removed - authentication is not available");
+    setUser(null);
+    setProfile(null);
+    setLoading(false);
   }, []);
 
   async function login(
