@@ -1,0 +1,29 @@
+{
+  "name": "Sri Raghavendra Swamy Matha",
+  "subtitle": "Yelahanka New Town, Bengaluru",
+
+  "status": {
+    "isOpen": true,
+    "message": ""
+  },
+
+  "address": {
+    "line1": "",
+    "city": "Bengaluru",
+    "state": "Karnataka",
+    "pincode": "560064"
+  },
+
+  "contact": {
+    "phone": "",
+    "email": ""
+  },
+
+  "location": {
+    "googleMaps": ""
+  },
+
+  "logo": "",
+
+  "updatedAt": null
+}
