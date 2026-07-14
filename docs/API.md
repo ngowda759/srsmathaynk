@@ -1,6 +1,8 @@
 # API Documentation
 
-Base URL: `https://rayaramathaynk.vercel.app/api`
+Base URL: `https://your-domain.com/api`
+
+*Note: Update the base URL to match your deployment domain.*
 
 ---
 
@@ -168,26 +170,26 @@ Deletes a file from the local filesystem.
 
 ### Create Admin with cURL
 ```bash
-curl -X POST https://rayaramathaynk.vercel.app/api/admin/users/create-admin \
+curl -X POST https://your-domain.com/api/admin/users/create-admin \
   -H "Content-Type: application/json" \
   -d '{"email":"newadmin@rayaramathaynk.com","password":"securePassword123","name":"New Admin"}'
 ```
 
 ### Set User Role with cURL
 ```bash
-curl -X POST https://rayaramathaynk.vercel.app/api/admin/users/set-role \
+curl -X POST https://your-domain.com/api/admin/users/set-role \
   -H "Content-Type: application/json" \
   -d '{"email":"user@example.com","role":"admin"}'
 ```
 
 ### Get Gallery Assets with cURL
 ```bash
-curl https://rayaramathaynk.vercel.app/api/gallery/local-assets
+curl https://your-domain.com/api/gallery/local-assets
 ```
 
 ### Delete Gallery Asset with cURL
 ```bash
-curl -X DELETE https://rayaramathaynk.vercel.app/api/gallery/local-assets \
+curl -X DELETE https://your-domain.com/api/gallery/local-assets \
   -H "Content-Type: application/json" \
   -d '{"src":"/images/temple/temple1.jpg"}'
 ```

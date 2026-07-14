@@ -2,7 +2,7 @@
 
 ## Overview
 
-Sri Raghavendra Swamy Temple website - a Next.js 14 application with Firebase backend.
+Sri Raghavendra Swamy Temple website - a Next.js 14 application.
 
 ---
 
@@ -76,7 +76,6 @@ Rayaramathaynk/
 │   └── useHomepage.ts
 │
 ├── lib/                         # Utilities
-│   ├── firebase.ts               # Firebase config
 │   ├── auth.ts                  # Auth utilities
 │   ├── utils.ts                 # General utilities
 │   ├── constants.ts             # Constants
@@ -204,14 +203,6 @@ Rayaramathaynk/
 ## Environment Variables
 
 ```env
-# Firebase (Required)
-NEXT_PUBLIC_FIREBASE_API_KEY=
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
-NEXT_PUBLIC_FIREBASE_APP_ID=
-
 # Chatbot (Optional)
 NEXT_PUBLIC_CHATBOT_ID=
 NEXT_PUBLIC_CHATBOT_LANGUAGE=en
@@ -231,6 +222,6 @@ NEXT_PUBLIC_APP_URL=
 | Styling | Tailwind CSS |
 | Animation | Framer Motion |
 | Icons | Lucide React |
-| Backend | Firebase (Auth, Firestore, Storage) |
-| Deployment | Vercel |
+| Backend | To be configured |
+| Deployment | Static hosting |
 | Calendar | Panchanga (Python) |

@@ -1,6 +1,6 @@
 # Rayara Math Temple Portal
 
-A modern, responsive temple management portal built using **Next.js**, **TypeScript**, **Tailwind CSS**, and **Firebase**. The application provides devotees with an easy way to explore temple information, book sevas, make donations, view events, and allows administrators to efficiently manage temple operations.
+A modern, responsive temple management portal built using **Next.js**, **TypeScript**, and **Tailwind CSS**. The application provides devotees with an easy way to explore temple information, book sevas, make donations, view events, and allows administrators to efficiently manage temple operations.
 
 ----
 
@@ -42,15 +42,11 @@ A modern, responsive temple management portal built using **Next.js**, **TypeScr
 
 ### Backend
 
-* Firebase Authentication
-* Firestore Database
-* Firebase Storage
-* Firebase Hosting (optional)
+* Backend services (to be configured)
 
 ### Deployment
 
-* Vercel
-* Firebase Hosting
+* Static site hosting (GitHub Pages, Netlify, or similar)
 
 ---
 
@@ -100,7 +96,7 @@ Create your environment file:
 cp .env.example .env.local
 ```
 
-Fill in the required Firebase configuration values.
+Fill in the required configuration values as needed.
 
 Start the development server:
 
@@ -158,17 +154,13 @@ Runs ESLint.
 
 ## Deployment
 
-### Vercel
+### Build for Production
 
 ```bash
-vercel
+npm run build
 ```
 
-### Firebase
-
-```bash
-firebase deploy
-```
+The built files can be deployed to any static hosting provider.
 
 ---
 
@@ -227,8 +219,6 @@ Built with:
 * React
 * TypeScript
 * Tailwind CSS
-* Firebase
-* Vercel
 
 ---
 
