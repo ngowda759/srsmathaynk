@@ -10,15 +10,15 @@ export const eventColumns: CrudColumn<TempleEvent>[] = [
   {
     key: "type",
     header: "Type",
-    formatter: (value) => EVENT_TYPE_LABELS[value as keyof typeof EVENT_TYPE_LABELS] || value,
+    formatter: (value: unknown) => EVENT_TYPE_LABELS[value as keyof typeof EVENT_TYPE_LABELS] || String(value),
   },
   {
     key: "startDate",
     header: "Start Date",
     sortable: true,
-    formatter: (value) => {
+    formatter: (value: unknown) => {
       if (!value) return "-";
-      const date = new Date(value);
+      const date = new Date(value as string | number | Date);
       return date.toLocaleDateString("en-IN", {
         day: "numeric",
         month: "short",
@@ -29,8 +29,8 @@ export const eventColumns: CrudColumn<TempleEvent>[] = [
   {
     key: "status",
     header: "Status",
-    formatter: (value) => {
-      const status = EVENT_STATUS_LABELS[value as keyof typeof EVENT_STATUS_LABELS] || value;
+    formatter: (value: unknown) => {
+      const status = EVENT_STATUS_LABELS[value as keyof typeof EVENT_STATUS_LABELS] || String(value);
       const colors: Record<string, string> = {
         UPCOMING: "text-blue-600 bg-blue-50",
         ONGOING: "text-green-600 bg-green-50",
@@ -43,12 +43,12 @@ export const eventColumns: CrudColumn<TempleEvent>[] = [
   {
     key: "featured",
     header: "Featured",
-    formatter: (value) => (value ? "⭐" : ""),
+    formatter: (value: unknown) => (value ? "⭐" : ""),
   },
   {
     key: "published",
     header: "Published",
-    formatter: (value) => (value ? "✅" : "❌"),
+    formatter: (value: unknown) => (value ? "✅" : "❌"),
   },
   {
     key: "actions",

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, CalendarDays, Clock3, MapPin } from "lucide-react";
-import { TempleEvent } from "@/types/event";
+import { TempleEvent, EVENT_TYPE_LABELS } from "@/types/event";
 
 export default function EventDetailPage() {
   const params = useParams();
@@ -83,7 +83,7 @@ export default function EventDetailPage() {
           <div className="flex flex-col md:flex-row md:items-center md:justify-between">
             <div>
               <span className="mb-4 inline-block rounded-full bg-white/20 px-4 py-2 text-sm font-semibold text-white">
-                {event.category || "Special Event"}
+                {EVENT_TYPE_LABELS[event.type] || "Special Event"}
               </span>
               <h1 className="mt-4 text-4xl font-bold text-white md:text-5xl lg:text-6xl">
                 {event.title}

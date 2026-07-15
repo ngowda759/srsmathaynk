@@ -51,9 +51,13 @@ jobs:
 
       - name: Generate Prisma Client
         run: npx prisma generate
+        env:
+          DATABASE_URL: postgresql://dummy:dummy@localhost:5432/dummy
 
       - name: Validate Prisma Schema
         run: npx prisma validate
+        env:
+          DATABASE_URL: postgresql://dummy:dummy@localhost:5432/dummy
 
   build:
     name: Build
@@ -74,9 +78,13 @@ jobs:
 
       - name: Generate Prisma Client
         run: npx prisma generate
+        env:
+          DATABASE_URL: postgresql://dummy:dummy@localhost:5432/dummy
 
       - name: Build Next.js application
         run: npm run build
+        env:
+          DATABASE_URL: postgresql://dummy:dummy@localhost:5432/dummy
 
   test:
     name: Test
@@ -97,6 +105,10 @@ jobs:
 
       - name: Generate Prisma Client
         run: npx prisma generate
+        env:
+          DATABASE_URL: postgresql://dummy:dummy@localhost:5432/dummy
 
       - name: Run tests
         run: npm test || echo "No test script configured"
+        env:
+          DATABASE_URL: postgresql://dummy:dummy@localhost:5432/dummy

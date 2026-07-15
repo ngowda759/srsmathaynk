@@ -288,8 +288,6 @@ class EventService {
     if (data.status !== undefined) updateData.status = data.status;
     if (data.featured !== undefined) updateData.featured = data.featured;
     if (data.published !== undefined) updateData.published = data.published;
-    if (data.imageId !== undefined) updateData.imageId = data.imageId;
-    if (data.bannerId !== undefined) updateData.bannerId = data.bannerId;
     if (data.maxAttendees !== undefined) updateData.maxAttendees = data.maxAttendees;
     if (data.organizer !== undefined) updateData.organizer = data.organizer;
     if (data.contactPhone !== undefined) updateData.contactPhone = data.contactPhone;

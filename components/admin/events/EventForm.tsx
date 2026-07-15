@@ -56,7 +56,7 @@ function toDateTimeInputs(
   return { date, time };
 }
 
-function toISODate(date: string, time: string): string | null {
+function toISODate(date: string, time: string | undefined): string | null {
   if (!date) return null;
 
   const [hours, minutes] = time ? time.split(":").map(Number) : [0, 0];
@@ -352,7 +352,10 @@ export default function EventForm({
         <FormNumberField
           label="Maximum Attendees"
           value={form.maxAttendees}
-          onChange={(value) => updateField("maxAttendees", value ?? undefined)}
+          onChange={(e) => {
+            const val = e.target.value;
+            updateField("maxAttendees", val ? parseInt(val, 10) : undefined);
+          }}
           placeholder="Leave empty for unlimited"
           min={1}
         />
