@@ -5,14 +5,20 @@ import { ReportSummary } from "@/types/report";
 
 class ReportService {
   async getSummary(): Promise<ReportSummary> {
-    const [donations, bookings] = await Promise.all([
+    const [donationsResult, bookings] = await Promise.all([
       donationService.getDonations(),
       sevaBookingService.getAllBookings(),
     ]);
 
+    const donations = donationsResult.donations;
+
     const donationRevenue = donations
-      .filter((d) => d.status === "received")
-      .reduce((sum, d) => sum + d.amount, 0);
+      .filter((d) => d.status === "COMPLETED")
+      .reduce((sum, d) => sum + Number(d.amount), 0);
+
+    const refundedAmount = donations
+      .filter((d) => d.status === "REFUNDED")
+      .reduce((sum, d) => sum + Number(d.amount), 0);
 
     const sevaRevenue = bookings
       .filter(
@@ -20,7 +26,7 @@ class ReportService {
           b.status === "confirmed" ||
           b.status === "completed"
       )
-      .reduce((sum, b) => sum + b.sevaAmount, 0);
+      .reduce((sum, b) => sum + Number(b.sevaAmount), 0);
 
     return {
       revenue: {
@@ -33,15 +39,19 @@ class ReportService {
       donations: {
         total: donations.length,
         pending: donations.filter(
-          (d) => d.status === "pending"
+          (d) => d.status === "PENDING"
         ).length,
-        received: donations.filter(
-          (d) => d.status === "received"
+        completed: donations.filter(
+          (d) => d.status === "COMPLETED"
         ).length,
         failed: donations.filter(
-          (d) => d.status === "failed"
+          (d) => d.status === "FAILED"
+        ).length,
+        refunded: donations.filter(
+          (d) => d.status === "REFUNDED"
         ).length,
         totalAmount: donationRevenue,
+        refundedAmount,
       },
 
       bookings: {
