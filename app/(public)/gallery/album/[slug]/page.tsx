@@ -190,7 +190,7 @@ export default function AlbumDetailPage({ params }: PageProps) {
       <Navbar />
       <main className="min-h-[calc(100vh-120px)] bg-white px-6 py-16 sm:px-8 lg:px-12">
         <div className="mx-auto max-w-7xl">
-          <Breadcrumb items={[{ label: "Gallery", href: "/gallery" }]} current={album.title} />
+          <Breadcrumb parentHref="/gallery" parentName="Gallery" current={album.title} />
         </div>
 
         {/* Album Header */}

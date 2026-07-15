@@ -9,7 +9,7 @@
 
 export type AlbumStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED";
 export type AlbumVisibility = "PRIVATE" | "PUBLIC" | "UNLISTED";
-export type GalleryItemType = "PHOTO" | "VIDEO";
+export type GalleryMediaType = "PHOTO" | "VIDEO";
 
 // Legacy types for backward compatibility
 export type LegacyGalleryCategory =
@@ -92,6 +92,7 @@ export interface GalleryAlbumType {
   festival?: {
     id: string;
     title: string;
+    titleKn?: string | null;
     startDate: Date;
   } | null;
 
@@ -100,6 +101,7 @@ export interface GalleryAlbumType {
   visibility: AlbumVisibility;
   featured: boolean;
   published: boolean;
+  active: boolean;
 
   // Counts
   photoCount: number;
@@ -120,7 +122,7 @@ export interface GalleryAlbumType {
   updatedById?: string | null;
 
   // Relations (optional, populated on demand)
-  items?: GalleryItemType[];
+  items?: GalleryItem[];
   itemCount?: number;
 }
 
@@ -160,7 +162,7 @@ export interface GalleryAlbumQuery {
 // GALLERY ITEM
 // =============================================================================
 
-export interface GalleryItemType {
+export interface GalleryItem {
   id: string;
   title?: string | null;
   titleKn?: string | null;
@@ -178,7 +180,7 @@ export interface GalleryItemType {
     duration?: number;
   };
 
-  type: GalleryItemType;
+  type: GalleryMediaType;
 
   // Display
   altText?: string | null;
@@ -216,7 +218,7 @@ export interface GalleryItemRequest {
   description?: string;
   descriptionKn?: string;
   mediaId: string;
-  type?: GalleryItemType;
+  type?: GalleryMediaType;
   altText?: string;
   caption?: string;
   captionKn?: string;
@@ -227,7 +229,7 @@ export interface GalleryItemRequest {
 }
 
 export interface GalleryItemQuery {
-  type?: GalleryItemType;
+  type?: GalleryMediaType;
   featured?: boolean;
   showOnHome?: boolean;
   albumId?: string;
@@ -301,17 +303,19 @@ export const ALBUM_VISIBILITY_LABELS: Record<AlbumVisibility, string> = {
   UNLISTED: "Unlisted",
 };
 
-export const ITEM_TYPE_LABELS: Record<GalleryItemType, string> = {
+export const ITEM_TYPE_LABELS: Record<GalleryMediaType, string> = {
   PHOTO: "Photo",
   VIDEO: "Video",
 };
 
 // Legacy exports for backward compatibility
 export type GalleryAlbum = GalleryAlbumType;
-export type GalleryMedia = GalleryItemType;
+export type GalleryMedia = GalleryItem;
 export type GalleryMediaRequest = GalleryItemRequest;
 export type GalleryImage = GalleryMedia;
 export type GalleryImageRequest = GalleryMediaRequest;
+// Also export GalleryItemType for legacy code
+export type GalleryItemType = GalleryItem;
 
 export const GALLERY_CATEGORIES: string[] = [
   "Rathotsava",

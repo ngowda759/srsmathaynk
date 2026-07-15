@@ -27,13 +27,13 @@ export default function GalleryStats({
     },
     {
       title: "Featured",
-      value: media.filter((m) => m.isFeatured).length,
+      value: media.filter((m) => m.featured).length,
       icon: Star,
       color: "bg-amber-50 text-amber-600",
     },
     {
       title: "Videos",
-      value: media.filter((m) => m.type === "video").length,
+      value: media.filter((m) => m.type === "VIDEO").length,
       icon: Video,
       color: "bg-purple-50 text-purple-600",
     },

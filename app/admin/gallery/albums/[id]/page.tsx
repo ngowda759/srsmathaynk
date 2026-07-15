@@ -9,7 +9,7 @@ import { ArrowLeft, Upload, Trash2, Star, Eye } from "lucide-react";
 import AdminPageWrapper from "@/components/admin/common/AdminPageWrapper";
 import Button from "@/components/ui/button";
 import Input from "@/components/ui/input";
-import Label from "@/components/ui/label";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
@@ -19,7 +19,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-import { GalleryAlbumType, GalleryItemType, AlbumStats } from "@/types/gallery";
+import { GalleryAlbumType, AlbumStats } from "@/types/gallery";
+import type { GalleryItem } from "@/types/gallery";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -30,7 +31,7 @@ export default function AlbumDetailPage({ params }: PageProps) {
   const router = useRouter();
   
   const [album, setAlbum] = useState<GalleryAlbumType | null>(null);
-  const [items, setItems] = useState<GalleryItemType[]>([]);
+  const [items, setItems] = useState<GalleryItem[]>([]);
   const [stats, setStats] = useState<AlbumStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -41,7 +42,7 @@ export default function AlbumDetailPage({ params }: PageProps) {
     titleKn: "",
     description: "",
     descriptionKn: "",
-    categoryId: "",
+    categoryId: null as string | null,
     status: "DRAFT" as const,
     visibility: "PRIVATE" as const,
     featured: false,

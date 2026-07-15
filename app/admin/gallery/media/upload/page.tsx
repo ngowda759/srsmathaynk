@@ -9,7 +9,7 @@ import { ArrowLeft, Upload, X, Image as ImageIcon, Video } from "lucide-react";
 import AdminPageWrapper from "@/components/admin/common/AdminPageWrapper";
 import Button from "@/components/ui/button";
 import Input from "@/components/ui/input";
-import Label from "@/components/ui/label";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -36,7 +36,7 @@ export default function MediaUploadPage() {
   const [albums, setAlbums] = useState<Album[]>([]);
 
   const [formData, setFormData] = useState({
-    albumId: "",
+    albumId: null as string | null,
     title: "",
     caption: "",
     tags: "",

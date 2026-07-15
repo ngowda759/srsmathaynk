@@ -9,7 +9,7 @@ import { ArrowLeft } from "lucide-react";
 import AdminPageWrapper from "@/components/admin/common/AdminPageWrapper";
 import Button from "@/components/ui/button";
 import Input from "@/components/ui/input";
-import Label from "@/components/ui/label";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
@@ -19,10 +19,27 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+import { AlbumStatus, AlbumVisibility } from "@/types/gallery";
+
 interface Category {
   id: string;
   name: string;
   slug: string;
+}
+
+interface FormData {
+  title: string;
+  titleKn: string;
+  slug: string;
+  description: string;
+  descriptionKn: string;
+  categoryId: string | null;
+  status: AlbumStatus;
+  visibility: AlbumVisibility;
+  featured: boolean;
+  published: boolean;
+  location: string;
+  eventDate: string;
 }
 
 export default function NewAlbumPage() {
@@ -31,13 +48,13 @@ export default function NewAlbumPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     title: "",
     titleKn: "",
     slug: "",
     description: "",
     descriptionKn: "",
-    categoryId: "",
+    categoryId: null,
     status: "DRAFT",
     visibility: "PRIVATE",
     featured: false,
@@ -217,7 +234,7 @@ export default function NewAlbumPage() {
             <Label htmlFor="status">Status</Label>
             <Select
               value={formData.status}
-              onValueChange={(value) => setFormData((prev) => ({ ...prev, status: value }))}
+              onValueChange={(value) => setFormData((prev) => ({ ...prev, status: value as AlbumStatus }))}
             >
               <SelectTrigger>
                 <SelectValue />
@@ -235,7 +252,7 @@ export default function NewAlbumPage() {
             <Label htmlFor="visibility">Visibility</Label>
             <Select
               value={formData.visibility}
-              onValueChange={(value) => setFormData((prev) => ({ ...prev, visibility: value }))}
+              onValueChange={(value) => setFormData((prev) => ({ ...prev, visibility: value as AlbumVisibility }))}
             >
               <SelectTrigger>
                 <SelectValue />

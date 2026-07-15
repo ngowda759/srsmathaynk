@@ -11,7 +11,7 @@ import {
   GalleryAlbumType,
   GalleryAlbumRequest,
   GalleryAlbumQuery,
-  GalleryItemType,
+  GalleryItem,
   GalleryItemRequest,
   GalleryItemQuery,
   GalleryCategoryType,
@@ -19,6 +19,7 @@ import {
   GalleryTagType,
   GalleryStats,
   AlbumStats,
+  GalleryMediaType,
 } from "@/types/gallery";
 import type { Prisma } from "@prisma/client";
 
@@ -52,12 +53,13 @@ function transformAlbum(prismaAlbum: any): GalleryAlbumType {
       : null,
     festivalId: prismaAlbum.festivalId,
     festival: prismaAlbum.festival
-      ? { id: prismaAlbum.festival.id, title: prismaAlbum.festival.title, startDate: prismaAlbum.festival.startDate }
+      ? { id: prismaAlbum.festival.id, title: prismaAlbum.festival.title, titleKn: prismaAlbum.festival.titleKn, startDate: prismaAlbum.festival.startDate }
       : null,
     status: prismaAlbum.status,
     visibility: prismaAlbum.visibility,
     featured: prismaAlbum.featured,
     published: prismaAlbum.published,
+    active: prismaAlbum.active ?? true,
     photoCount: prismaAlbum.photoCount,
     videoCount: prismaAlbum.videoCount,
     displayOrder: prismaAlbum.displayOrder,
@@ -71,7 +73,7 @@ function transformAlbum(prismaAlbum: any): GalleryAlbumType {
   };
 }
 
-function transformItem(prismaItem: any): GalleryItemType {
+function transformItem(prismaItem: any): GalleryItem {
   return {
     id: prismaItem.id,
     title: prismaItem.title,
@@ -83,6 +85,7 @@ function transformItem(prismaItem: any): GalleryItemType {
       ? {
           id: prismaItem.media.id,
           url: storageService.getPublicUrl(prismaItem.media.bucket, prismaItem.media.storagePath),
+          thumbnailUrl: storageService.getPublicUrl(prismaItem.media.bucket, prismaItem.media.storagePath),
           filename: prismaItem.media.filename,
           mimeType: prismaItem.media.mimeType,
           fileSize: prismaItem.media.fileSize,
@@ -90,20 +93,20 @@ function transformItem(prismaItem: any): GalleryItemType {
           height: prismaItem.media.height,
           duration: prismaItem.media.duration,
         }
-      : null,
+      : undefined,
     type: prismaItem.type,
     altText: prismaItem.altText,
     caption: prismaItem.caption,
     captionKn: prismaItem.captionKn,
     featured: prismaItem.featured,
     showOnHome: prismaItem.showOnHome,
-    displayOrder: prismaItem.displayOrder,
+    displayOrder: prismaItem.displayOrder ?? prismaItem.order ?? 0,
     width: prismaItem.width,
     height: prismaItem.height,
     fileSize: prismaItem.fileSize,
     duration: prismaItem.duration,
     tags: prismaItem.tags || [],
-    viewCount: prismaItem.viewCount,
+    viewCount: prismaItem.viewCount ?? 0,
     createdAt: prismaItem.createdAt,
     updatedAt: prismaItem.updatedAt,
     deletedAt: prismaItem.deletedAt,
@@ -263,7 +266,7 @@ class AlbumService {
     }
   }
 
-  async getAlbumWithItems(id: string, page = 1, limit = 50): Promise<{ album: GalleryAlbumType; items: GalleryItemType[]; total: number }> {
+  async getAlbumWithItems(id: string, page = 1, limit = 50): Promise<{ album: GalleryAlbumType; items: GalleryItem[]; total: number }> {
     try {
       const album = await prisma.galleryAlbum.findUnique({
         where: { id },
@@ -387,9 +390,9 @@ class AlbumService {
       if (data.titleKn !== undefined) updateData.titleKn = data.titleKn;
       if (data.description !== undefined) updateData.description = data.description;
       if (data.descriptionKn !== undefined) updateData.descriptionKn = data.descriptionKn;
-      if (data.coverImageId !== undefined) updateData.coverImageId = data.coverImageId;
-      if (data.categoryId !== undefined) updateData.categoryId = data.categoryId;
-      if (data.festivalId !== undefined) updateData.festivalId = data.festivalId;
+      if (data.coverImageId !== undefined) updateData.coverImage = data.coverImageId ? { connect: { id: data.coverImageId } } : { disconnect: true };
+      if (data.categoryId !== undefined) updateData.category = data.categoryId ? { connect: { id: data.categoryId } } : { disconnect: true };
+      if (data.festivalId !== undefined) updateData.festival = data.festivalId ? { connect: { id: data.festivalId } } : { disconnect: true };
       if (data.status !== undefined) updateData.status = data.status;
       if (data.visibility !== undefined) updateData.visibility = data.visibility;
       if (data.featured !== undefined) updateData.featured = data.featured;
@@ -405,7 +408,7 @@ class AlbumService {
         include: {
           coverImage: true,
           category: true,
-          festival: { select: { id: true, title: true, startDate: true } },
+          festival: { select: { id: true, title: true, titleKn: true, startDate: true } },
         },
       });
 
@@ -527,7 +530,7 @@ class AlbumService {
 // =============================================================================
 
 class ItemService {
-  async getItems(query?: GalleryItemQuery): Promise<GalleryItemType[]> {
+  async getItems(query?: GalleryItemQuery): Promise<GalleryItem[]> {
     try {
       const where: Prisma.GalleryItemWhereInput = {
         deletedAt: null,
@@ -585,7 +588,7 @@ class ItemService {
     }
   }
 
-  async getItem(id: string): Promise<GalleryItemType | null> {
+  async getItem(id: string): Promise<GalleryItem | null> {
     try {
       const item = await prisma.galleryItem.findUnique({
         where: { id },
@@ -612,7 +615,7 @@ class ItemService {
     }
   }
 
-  async createItem(data: GalleryItemRequest, userId?: string): Promise<GalleryItemType> {
+  async createItem(data: GalleryItemRequest, userId?: string): Promise<GalleryItem> {
     try {
       const item = await prisma.galleryItem.create({
         data: {
@@ -645,7 +648,7 @@ class ItemService {
     }
   }
 
-  async updateItem(id: string, data: Partial<GalleryItemRequest>): Promise<GalleryItemType> {
+  async updateItem(id: string, data: Partial<GalleryItemRequest>): Promise<GalleryItem> {
     try {
       const updateData: Prisma.GalleryItemUpdateInput = {};
 
@@ -653,7 +656,7 @@ class ItemService {
       if (data.titleKn !== undefined) updateData.titleKn = data.titleKn;
       if (data.description !== undefined) updateData.description = data.description;
       if (data.descriptionKn !== undefined) updateData.descriptionKn = data.descriptionKn;
-      if (data.mediaId !== undefined) updateData.mediaId = data.mediaId;
+      if (data.mediaId !== undefined) updateData.media = { connect: { id: data.mediaId } };
       if (data.type !== undefined) updateData.type = data.type;
       if (data.altText !== undefined) updateData.altText = data.altText;
       if (data.caption !== undefined) updateData.caption = data.caption;
@@ -704,7 +707,7 @@ class ItemService {
       });
 
       // Update album counts
-      await albumService.updateAlbumCounts(albumId);
+      await albumInstance.updateAlbumCounts(albumId);
     } catch (error) {
       logger.error("[GalleryService] Failed to add item to album", error);
       throw handlePrismaError(error);
@@ -718,7 +721,7 @@ class ItemService {
       });
 
       // Update album counts
-      await albumService.updateAlbumCounts(albumId);
+      await albumInstance.updateAlbumCounts(albumId);
     } catch (error) {
       logger.error("[GalleryService] Failed to remove item from album", error);
       throw handlePrismaError(error);
@@ -742,7 +745,7 @@ class ItemService {
     }
   }
 
-  async toggleFeatured(id: string): Promise<GalleryItemType> {
+  async toggleFeatured(id: string): Promise<GalleryItem> {
     try {
       const item = await prisma.galleryItem.findUnique({ where: { id } });
       if (!item) {
@@ -765,7 +768,7 @@ class ItemService {
     }
   }
 
-  async toggleShowOnHome(id: string): Promise<GalleryItemType> {
+  async toggleShowOnHome(id: string): Promise<GalleryItem> {
     try {
       const item = await prisma.galleryItem.findUnique({ where: { id } });
       if (!item) {
@@ -1005,12 +1008,16 @@ export const galleryService = {
   toggleAlbumPublished: albumInstance.togglePublished.bind(albumInstance),
   reorderAlbums: albumInstance.reorderAlbums.bind(albumInstance),
 
-  // Items
+  // Items (also aliased as Image for backward compatibility)
   getItems: itemInstance.getItems.bind(itemInstance),
   getItem: itemInstance.getItem.bind(itemInstance),
+  getImageById: itemInstance.getItem.bind(itemInstance),
   createItem: itemInstance.createItem.bind(itemInstance),
+  createImage: itemInstance.createItem.bind(itemInstance),
   updateItem: itemInstance.updateItem.bind(itemInstance),
+  updateImage: itemInstance.updateItem.bind(itemInstance),
   deleteItem: itemInstance.deleteItem.bind(itemInstance),
+  deleteImage: itemInstance.deleteItem.bind(itemInstance),
   addItemToAlbum: itemInstance.addItemToAlbum.bind(itemInstance),
   removeItemFromAlbum: itemInstance.removeItemFromAlbum.bind(itemInstance),
   reorderAlbumItems: itemInstance.reorderAlbumItems.bind(itemInstance),
