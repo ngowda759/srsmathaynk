@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import Link from "next/link";
 import toast from "react-hot-toast";
 
 import {
@@ -211,12 +212,12 @@ export default function GalleryDashboard({ initialAlbums, initialStats }: Galler
       {isEmpty && (
         <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-8 text-center">
           <p className="text-gray-500 mb-4">No gallery items yet. Create your first album!</p>
-          <a
+          <Link
             href="/admin/gallery/albums/new"
             className="rounded-lg bg-orange-500 px-4 py-2 text-white hover:bg-orange-600 inline-block"
           >
             Create Album
-          </a>
+          </Link>
         </div>
       )}
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, use, useRef, TouchEvent } from "react";
+import { useState, useEffect, use, useRef, TouchEvent, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -49,6 +49,12 @@ export default function AlbumDetailPage({ params }: PageProps) {
   // Touch handling for mobile swipe
   const touchStartX = useRef<number>(0);
   const touchEndX = useRef<number>(0);
+  const itemsRef = useRef(items);
+  
+  // Keep ref updated
+  useEffect(() => {
+    itemsRef.current = items;
+  }, [items]);
 
   useEffect(() => {
     async function loadAlbum() {
@@ -81,24 +87,34 @@ export default function AlbumDetailPage({ params }: PageProps) {
     loadAlbum();
   }, [slug, router]);
 
-  const openLightbox = (index: number) => {
+  // Scroll lock when lightbox opens
+  useEffect(() => {
+    if (lightboxOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [lightboxOpen]);
+
+  const openLightbox = useCallback((index: number) => {
     setLightboxIndex(index);
     setLightboxOpen(true);
-    document.body.style.overflow = "hidden";
-  };
+  }, []);
 
-  const closeLightbox = () => {
+  const closeLightbox = useCallback(() => {
     setLightboxOpen(false);
-    document.body.style.overflow = "";
-  };
+  }, []);
 
-  const nextImage = () => {
-    setLightboxIndex((prev) => (prev + 1) % items.length);
-  };
+  const nextImage = useCallback(() => {
+    setLightboxIndex((prev) => (prev + 1) % itemsRef.current.length);
+  }, []);
 
-  const prevImage = () => {
-    setLightboxIndex((prev) => (prev - 1 + items.length) % items.length);
-  };
+  const prevImage = useCallback(() => {
+    setLightboxIndex((prev) => (prev - 1 + itemsRef.current.length) % itemsRef.current.length);
+  }, []);
 
   // Keyboard navigation
   useEffect(() => {
@@ -110,7 +126,7 @@ export default function AlbumDetailPage({ params }: PageProps) {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [lightboxOpen]);
+  }, [lightboxOpen, nextImage, prevImage, closeLightbox]);
 
   // Handle swipe gestures
   const handleTouchStart = (e: TouchEvent) => {

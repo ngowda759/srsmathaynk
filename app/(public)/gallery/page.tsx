@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect, useRef, TouchEvent } from "react";
+import { useState, useEffect, useRef, TouchEvent, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import Breadcrumb from "@/components/calendar/Breadcrumb";
 import SectionHeading from "@/components/common/SectionHeading";
-import { ChevronDown, ChevronLeft, ChevronRight, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, X } from "lucide-react";
 
 type GalleryItem = {
   id: string;
@@ -32,17 +32,23 @@ type GalleryFilter = "all" | "photos" | "videos";
 
 export default function GalleryPage() {
   const [albums, setAlbums] = useState<GalleryAlbum[]>([]);
-  const [items, setItems] = useState<GalleryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<GalleryFilter>("all");
   const [selectedYear, setSelectedYear] = useState<string>("all");
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [viewMode, setViewMode] = useState<"albums" | "all">("albums");
+  const [items, setItems] = useState<GalleryItem[]>([]);
   
   // Touch handling for mobile swipe
   const touchStartX = useRef<number>(0);
   const touchEndX = useRef<number>(0);
+  const itemsRef = useRef(items);
+  
+  // Keep ref updated
+  useEffect(() => {
+    itemsRef.current = items;
+  }, [items]);
 
   // Get unique years from items
   const years = [...new Set(items.map((item) => item.year).filter(Boolean))].sort().reverse();
@@ -71,26 +77,34 @@ export default function GalleryPage() {
     loadGallery();
   }, []);
 
-  const openLightbox = (index: number) => {
+  // Scroll lock when lightbox opens
+  useEffect(() => {
+    if (lightboxOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [lightboxOpen]);
+
+  const openLightbox = useCallback((index: number) => {
     setLightboxIndex(index);
     setLightboxOpen(true);
-    // Prevent body scroll when lightbox is open
-    document.body.style.overflow = "hidden";
-  };
+  }, []);
 
-  const closeLightbox = () => {
+  const closeLightbox = useCallback(() => {
     setLightboxOpen(false);
-    // Restore body scroll
-    document.body.style.overflow = "";
-  };
+  }, []);
 
-  const nextImage = () => {
-    setLightboxIndex((prev) => (prev + 1) % filteredItems.length);
-  };
+  const nextImage = useCallback(() => {
+    setLightboxIndex((prev) => (prev + 1) % itemsRef.current.length);
+  }, []);
 
-  const prevImage = () => {
-    setLightboxIndex((prev) => (prev - 1 + filteredItems.length) % filteredItems.length);
-  };
+  const prevImage = useCallback(() => {
+    setLightboxIndex((prev) => (prev - 1 + itemsRef.current.length) % itemsRef.current.length);
+  }, []);
 
   // Keyboard navigation
   useEffect(() => {
@@ -102,7 +116,7 @@ export default function GalleryPage() {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [lightboxOpen]);
+  }, [lightboxOpen, nextImage, prevImage, closeLightbox]);
 
   // Handle swipe gestures
   const handleTouchStart = (e: TouchEvent) => {

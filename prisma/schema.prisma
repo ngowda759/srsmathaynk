@@ -1048,26 +1048,55 @@ model GalleryItem {
 
   // Media
   mediaId String
-  media   Media  @relation(fields: [mediaId], references: [id])
+  media   Media  @relation(fields: [mediaId], references: [id], onDelete: Cascade)
 
   // Event association
   eventId String?
   event   Event?  @relation(fields: [eventId], references: [id])
 
-  featured Boolean @default(false)
-  active   Boolean @default(true)
-  order    Int     @default(0)
+  // Type (PHOTO or VIDEO)
+  type GalleryItemType @default(PHOTO)
 
-  uploadedBy String?
+  // Display settings
+  altText    String?
+  caption    String?
+  captionKn  String?
+
+  // Album association via junction
+  albums AlbumItem[]
+
+  featured   Boolean @default(false)
+  showOnHome Boolean @default(false)
+  active     Boolean @default(true)
+
+  // Display
+  displayOrder Int @default(0)
+  order        Int @default(0)
+
+  // Exif/Media metadata
+  width    Int?
+  height   Int?
+  fileSize Int?
+  duration Int? // seconds (for video)
+
+  // Tags stored as JSON array
+  tags String[]
+
+  // View tracking
+  viewCount Int @default(0)
 
   // Audit fields
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+  uploadedById String?
 
   @@index([active])
   @@index([featured])
   @@index([eventId])
+  @@index([type, featured])
+  @@index([featured, showOnHome])
+  @@index([displayOrder])
   @@map("gallery_items")
 }
 
@@ -1594,61 +1623,6 @@ model GalleryAlbum {
   @@index([festivalId])
   @@index([eventDate])
   @@map("gallery_albums")
-}
-
-/// Gallery Item (individual photo/video)
-model GalleryItem {
-  id String @id @default(uuid())
-
-  title       String?
-  titleKn     String?
-  description String?
-  descriptionKn String?
-
-  // Media reference
-  mediaId String
-  media   Media  @relation(fields: [mediaId], references: [id], onDelete: Cascade)
-
-  // Type derived from media.type but stored for filtering
-  type GalleryItemType
-
-  // Display settings
-  altText    String?
-  caption    String?
-  captionKn  String?
-
-  // Album association via junction
-  albums AlbumItem[]
-
-  // Features
-  featured   Boolean @default(false)
-  showOnHome Boolean @default(false)
-
-  // Display
-  displayOrder Int @default(0)
-
-  // Exif/Media metadata (denormalized)
-  width    Int?
-  height   Int?
-  fileSize Int?
-  duration Int? // seconds (for video)
-
-  // Tags stored as JSON array
-  tags String[]
-
-  // View tracking
-  viewCount Int @default(0)
-
-  // Audit fields
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  deletedAt  DateTime?
-  uploadedById String?
-
-  @@index([type, featured])
-  @@index([featured, showOnHome])
-  @@index([displayOrder])
-  @@map("gallery_items")
 }
 
 /// Album-Item junction (many-to-many)
