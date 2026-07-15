@@ -26,6 +26,11 @@ function decimalToNumber(value: unknown): number {
 export const donationService = {
   // Donations
   async createDonation(data: DonationRequest): Promise<string> {
+    // Validate amount is positive
+    if (!data.amount || data.amount <= 0) {
+      throw new Error("Donation amount must be greater than zero");
+    }
+
     const donation = await prisma.donation.create({
       data: {
         profileId: data.profileId,
@@ -114,6 +119,25 @@ export const donationService = {
     id: string,
     data: Partial<DonationRequest & { status?: string }>
   ): Promise<void> {
+    // Get current donation to check status transitions
+    const currentDonation = await prisma.donation.findUnique({ where: { id } });
+    if (!currentDonation) {
+      throw new Error("Donation not found");
+    }
+
+    // Validate status transitions - prevent COMPLETED from reverting
+    if (data.status && currentDonation.status === "COMPLETED") {
+      // Allow only REFUNDED transition from COMPLETED
+      if (data.status !== "REFUNDED") {
+        throw new Error("Cannot change status of a completed donation. Only refund is allowed.");
+      }
+    }
+
+    // Validate amount is positive if being updated
+    if (data.amount !== undefined && data.amount <= 0) {
+      throw new Error("Donation amount must be greater than zero");
+    }
+
     const updateData: Prisma.DonationUpdateInput = {};
 
     if (data.amount !== undefined) updateData.amount = new Prisma.Decimal(data.amount);
@@ -134,11 +158,10 @@ export const donationService = {
       data: updateData,
     });
 
-    // Update campaign raised amount if status changed to completed
-    if (data.status === "COMPLETED") {
-      const donation = await prisma.donation.findUnique({ where: { id } });
-      if (donation?.campaignId) {
-        await this.updateCampaignRaisedAmount(donation.campaignId);
+    // Update campaign raised amount if status changed
+    if (data.status === "COMPLETED" || data.status === "REFUNDED" || currentDonation.status === "COMPLETED") {
+      if (currentDonation.campaignId) {
+        await this.updateCampaignRaisedAmount(currentDonation.campaignId);
       }
     }
   },
@@ -439,13 +462,37 @@ export const donationService = {
   // Receipt generation
   async generateReceiptNumber(): Promise<string> {
     const year = new Date().getFullYear();
-    const count = await prisma.donation.count({
-      where: {
-        receiptNumber: { startsWith: `SRS/${year}/` },
-        deletedAt: null,
-      },
+    const prefix = `SRS/${year}/`;
+    
+    // Use transaction to ensure uniqueness
+    return await prisma.$transaction(async (tx) => {
+      const count = await tx.donation.count({
+        where: {
+          receiptNumber: { startsWith: prefix },
+          deletedAt: null,
+        },
+      });
+      
+      let sequence = count + 1;
+      let receiptNumber = `${prefix}${String(sequence).padStart(6, "0")}`;
+      
+      // Check for collision and retry
+      let attempts = 0;
+      while (attempts < 10) {
+        const existing = await tx.donation.findFirst({
+          where: { receiptNumber, deletedAt: null },
+        });
+        
+        if (!existing) {
+          return receiptNumber;
+        }
+        
+        sequence++;
+        receiptNumber = `${prefix}${String(sequence).padStart(6, "0")}`;
+        attempts++;
+      }
+      
+      throw new Error("Unable to generate unique receipt number");
     });
-    const sequence = String(count + 1).padStart(6, "0");
-    return `SRS/${year}/${sequence}`;
   },
 };

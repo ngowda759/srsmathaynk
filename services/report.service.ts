@@ -16,6 +16,10 @@ class ReportService {
       .filter((d) => d.status === "COMPLETED")
       .reduce((sum, d) => sum + Number(d.amount), 0);
 
+    const refundedAmount = donations
+      .filter((d) => d.status === "REFUNDED")
+      .reduce((sum, d) => sum + Number(d.amount), 0);
+
     const sevaRevenue = bookings
       .filter(
         (b) =>
@@ -43,7 +47,11 @@ class ReportService {
         failed: donations.filter(
           (d) => d.status === "FAILED"
         ).length,
+        refunded: donations.filter(
+          (d) => d.status === "REFUNDED"
+        ).length,
         totalAmount: donationRevenue,
+        refundedAmount,
       },
 
       bookings: {

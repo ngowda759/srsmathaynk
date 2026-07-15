@@ -27,7 +27,7 @@ function ReportsPageContent() {
   const [customEnd, setCustomEnd] = useState("");
   const [summary, setSummary] = useState({
     revenue: { donationRevenue: 0, sevaRevenue: 0, totalRevenue: 0 },
-    donations: { total: 0, completed: 0, pending: 0, failed: 0 },
+    donations: { total: 0, completed: 0, pending: 0, failed: 0, refunded: 0, refundedAmount: 0 },
     bookings: { total: 0, confirmed: 0, completed: 0, pending: 0, cancelled: 0 },
   });
   const [recentDonations, setRecentDonations] = useState<DonationRecord[]>([]);
@@ -111,6 +111,9 @@ function ReportsPageContent() {
           .filter((b: SevaBooking) => b.status === "completed" || b.status === "confirmed")
           .reduce((sum: number, b: SevaBooking) => sum + Number(b.sevaAmount), 0);
 
+        const refundedDonations = filteredDonations.filter((d: DonationRecord) => d.status === "REFUNDED");
+        const refundedAmount = refundedDonations.reduce((sum: number, d: DonationRecord) => sum + Number(d.amount), 0);
+
         setSummary({
           revenue: {
             donationRevenue,
@@ -122,6 +125,8 @@ function ReportsPageContent() {
             completed: filteredDonations.filter((d: DonationRecord) => d.status === "COMPLETED").length,
             pending: filteredDonations.filter((d: DonationRecord) => d.status === "PENDING").length,
             failed: filteredDonations.filter((d: DonationRecord) => d.status === "FAILED").length,
+            refunded: refundedDonations.length,
+            refundedAmount,
           },
           bookings: {
             total: filteredBookings.length,
@@ -258,6 +263,11 @@ function ReportsPageContent() {
                   label="Failed"
                   value={summary.donations.failed}
                   color="red"
+                />
+                <SummaryRow
+                  label="Refunded"
+                  value={summary.donations.refunded}
+                  color="stone"
                 />
               </div>
             </div>
