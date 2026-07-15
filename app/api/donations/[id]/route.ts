@@ -6,8 +6,15 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { donationService } from "@/services/donation.service";
 import { DonationRequest } from "@/types/donation";
+
+export const dynamic = "force-dynamic";
+
+// Lazy load service to prevent Prisma initialization at build time
+async function getDonationService() {
+  const { donationService } = await import("@/services/donation.service");
+  return donationService;
+}
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -17,6 +24,7 @@ interface RouteParams {
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
     const { id } = await params;
+    const donationService = await getDonationService();
     const donation = await donationService.getDonationById(id);
 
     if (!donation) {
@@ -41,6 +49,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
   try {
     const { id } = await params;
     const body: Partial<DonationRequest & { status?: string }> = await request.json();
+    const donationService = await getDonationService();
 
     const existing = await donationService.getDonationById(id);
     if (!existing) {
@@ -69,6 +78,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
     const { id } = await params;
+    const donationService = await getDonationService();
 
     const existing = await donationService.getDonationById(id);
     if (!existing) {

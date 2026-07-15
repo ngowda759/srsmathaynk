@@ -4,7 +4,15 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { donationService } from "@/services/donation.service";
+
+export const dynamic = "force-dynamic";
+
+// Lazy load service to prevent Prisma initialization at build time
+async function getdonationService() {
+  const { donationService } = await import("@/services/donation.service");
+  return donationService;
+}
+
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -31,7 +39,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
             { status: 400 }
           );
         }
-        await donationService.updateDonationStatus(id, status);
+        await (await getdonationService()).updateDonationStatus(id, status);
         return NextResponse.json({
           success: true,
           message: `Donation status updated to ${status}`,
@@ -39,15 +47,15 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       }
 
       case "generateReceipt": {
-        const donation = await donationService.getDonationById(id);
+        const donation = await (await getdonationService()).getDonationById(id);
         if (!donation) {
           return NextResponse.json(
             { success: false, error: "Donation not found" },
             { status: 404 }
           );
         }
-        const receiptNumber = await donationService.generateReceiptNumber();
-        await donationService.updateDonation(id, {
+        const receiptNumber = await (await getdonationService()).generateReceiptNumber();
+        await (await getdonationService()).updateDonation(id, {
           receiptNumber,
           status: "COMPLETED",
         });
@@ -59,9 +67,9 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       }
 
       case "markCompleted": {
-        await donationService.updateDonationStatus(id, "COMPLETED");
-        const receiptNumber = await donationService.generateReceiptNumber();
-        await donationService.updateDonation(id, { receiptNumber });
+        await (await getdonationService()).updateDonationStatus(id, "COMPLETED");
+        const receiptNumber = await (await getdonationService()).generateReceiptNumber();
+        await (await getdonationService()).updateDonation(id, { receiptNumber });
         return NextResponse.json({
           success: true,
           message: "Donation marked as completed",
@@ -69,7 +77,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       }
 
       case "markFailed": {
-        await donationService.updateDonationStatus(id, "FAILED");
+        await (await getdonationService()).updateDonationStatus(id, "FAILED");
         return NextResponse.json({
           success: true,
           message: "Donation marked as failed",

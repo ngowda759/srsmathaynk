@@ -5,8 +5,16 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { donationService } from "@/services/donation.service";
 import { DonationCampaignRequest } from "@/types/donation";
+
+export const dynamic = "force-dynamic";
+
+// Lazy load service to prevent Prisma initialization at build time
+async function getdonationService() {
+  const { donationService } = await import("@/services/donation.service");
+  return donationService;
+}
+
 
 // GET /api/donations/campaigns
 export async function GET(request: NextRequest) {
@@ -33,7 +41,7 @@ export async function GET(request: NextRequest) {
       options.limit = parseInt(searchParams.get("limit")!);
     }
 
-    const result = await donationService.getCampaigns(options);
+    const result = await (await getdonationService()).getCampaigns(options);
 
     return NextResponse.json({
       success: true,
@@ -61,7 +69,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const id = await donationService.createCampaign(body);
+    const id = await (await getdonationService()).createCampaign(body);
 
     return NextResponse.json(
       { success: true, data: { id }, message: "Campaign created successfully" },

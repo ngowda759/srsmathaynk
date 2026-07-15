@@ -4,7 +4,15 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { donationService } from "@/services/donation.service";
+
+export const dynamic = "force-dynamic";
+
+// Lazy load service to prevent Prisma initialization at build time
+async function getdonationService() {
+  const { donationService } = await import("@/services/donation.service");
+  return donationService;
+}
+
 
 // POST /api/donations/receipts
 export async function POST(request: NextRequest) {
@@ -19,7 +27,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const donation = await donationService.getDonationById(donationId);
+    const donation = await (await getdonationService()).getDonationById(donationId);
     if (!donation) {
       return NextResponse.json(
         { success: false, error: "Donation not found" },
@@ -28,10 +36,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate receipt number
-    const receiptNumber = await donationService.generateReceiptNumber();
+    const receiptNumber = await (await getdonationService()).generateReceiptNumber();
     
     // Update donation with receipt number and mark as completed
-    await donationService.updateDonation(donationId, {
+    await (await getdonationService()).updateDonation(donationId, {
       receiptNumber,
       status: "COMPLETED",
     });

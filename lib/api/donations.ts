@@ -203,8 +203,10 @@ export async function getArchivedDonations(): Promise<any[]> {
 }
 
 export async function permanentDeleteDonation(id: string): Promise<void> {
-  const res = await fetch(`${API_BASE}/${id}/permanent`, {
-    method: "DELETE",
+  const res = await fetch(`${API_BASE}/archive`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "permanent-delete", id }),
   });
   const json: DonationApiResponse = await res.json();
   if (!json.success) throw new Error(json.error);

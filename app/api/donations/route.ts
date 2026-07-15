@@ -5,8 +5,16 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { donationService } from "@/services/donation.service";
 import { DonationRequest } from "@/types/donation";
+
+export const dynamic = "force-dynamic";
+
+// Lazy load service to prevent Prisma initialization at build time
+async function getdonationService() {
+  const { donationService } = await import("@/services/donation.service");
+  return donationService;
+}
+
 
 // GET /api/donations - List donations with filtering
 export async function GET(request: NextRequest) {
@@ -41,7 +49,7 @@ export async function GET(request: NextRequest) {
       options.offset = parseInt(searchParams.get("offset")!);
     }
 
-    const result = await donationService.getDonations(options);
+    const result = await (await getdonationService()).getDonations(options);
 
     return NextResponse.json({
       success: true,
@@ -77,7 +85,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const id = await donationService.createDonation(body);
+    const id = await (await getdonationService()).createDonation(body);
 
     return NextResponse.json(
       { success: true, data: { id }, message: "Donation created successfully" },

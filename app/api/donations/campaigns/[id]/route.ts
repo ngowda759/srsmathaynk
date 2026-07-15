@@ -6,8 +6,16 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { donationService } from "@/services/donation.service";
 import { DonationCampaignRequest } from "@/types/donation";
+
+export const dynamic = "force-dynamic";
+
+// Lazy load service to prevent Prisma initialization at build time
+async function getdonationService() {
+  const { donationService } = await import("@/services/donation.service");
+  return donationService;
+}
+
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -17,7 +25,7 @@ interface RouteParams {
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
     const { id } = await params;
-    const campaign = await donationService.getCampaignById(id);
+    const campaign = await (await getdonationService()).getCampaignById(id);
 
     if (!campaign) {
       return NextResponse.json(
@@ -42,7 +50,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     const { id } = await params;
     const body: Partial<DonationCampaignRequest> = await request.json();
 
-    const existing = await donationService.getCampaignById(id);
+    const existing = await (await getdonationService()).getCampaignById(id);
     if (!existing) {
       return NextResponse.json(
         { success: false, error: "Campaign not found" },
@@ -50,7 +58,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    await donationService.updateCampaign(id, body);
+    await (await getdonationService()).updateCampaign(id, body);
 
     return NextResponse.json({
       success: true,
@@ -70,7 +78,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
     const { id } = await params;
 
-    const existing = await donationService.getCampaignById(id);
+    const existing = await (await getdonationService()).getCampaignById(id);
     if (!existing) {
       return NextResponse.json(
         { success: false, error: "Campaign not found" },
@@ -78,7 +86,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    await donationService.deleteCampaign(id);
+    await (await getdonationService()).deleteCampaign(id);
 
     return NextResponse.json({
       success: true,

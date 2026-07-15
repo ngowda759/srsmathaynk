@@ -4,7 +4,15 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { donationService } from "@/services/donation.service";
+
+export const dynamic = "force-dynamic";
+
+// Lazy load service to prevent Prisma initialization at build time
+async function getdonationService() {
+  const { donationService } = await import("@/services/donation.service");
+  return donationService;
+}
+
 
 // GET /api/donations/stats
 export async function GET(request: NextRequest) {
@@ -27,7 +35,7 @@ export async function GET(request: NextRequest) {
       options.campaignId = searchParams.get("campaignId")!;
     }
 
-    const stats = await donationService.getStatistics(options);
+    const stats = await (await getdonationService()).getStatistics(options);
 
     return NextResponse.json({ success: true, data: stats });
   } catch (error) {
