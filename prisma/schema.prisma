@@ -976,6 +976,7 @@ model Donation {
   @@index([campaignId])
   @@index([status])
   @@index([createdAt])
+  @@unique([receiptNumber])
   @@map("donations")
 }
 
