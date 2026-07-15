@@ -3,7 +3,6 @@
  * Profile uses RBAC with Role and UserRole tables
  */
 import { createClient } from '@/lib/supabase/client'
-import { createClient as createServerClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/db'
 import type { User } from '@supabase/supabase-js'
 
@@ -223,11 +222,11 @@ class AuthService {
   }
 
   /**
-   * Get current session (server-side)
+   * Get current session
    */
   async getSession(): Promise<User | null> {
     try {
-      const supabase = await createServerClient()
+      const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
       return user
     } catch {

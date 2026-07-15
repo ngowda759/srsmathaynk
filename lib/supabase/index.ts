@@ -1,3 +1,3 @@
 export { createClient } from './client'
-export { createClient as createServerClient } from './server'
+export { createClient, createServerClient } from './server'
 export { updateSession } from './middleware'

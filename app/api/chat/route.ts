@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { messages, sessionId, userId, detectedLanguage } = body;
+    const { messages, sessionId } = body;
 
     // Validate messages
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
