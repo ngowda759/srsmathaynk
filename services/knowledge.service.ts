@@ -37,7 +37,7 @@ function mapArticle(article: {
   viewCount: number;
   createdAt: Date;
   updatedAt: Date;
-  category?: { id: string; name: string; slug: string; nameKn: string | null } | null;
+  category?: { id: string; name: string; slug: string } | null;
   articleTags?: { tag: { id: string; name: string; slug: string; createdAt: Date } }[];
 }): KnowledgeArticleRecord {
   return {
@@ -56,9 +56,26 @@ function mapArticle(article: {
     viewCount: article.viewCount,
     createdAt: article.createdAt,
     updatedAt: article.updatedAt,
-    category: article.category as KnowledgeCategoryRecord | null,
-    tags: article.articleTags?.map((t) => t.tag) as KnowledgeTagRecord[] || [],
-  };
+    category: article.category ? {
+      id: article.category.id,
+      name: article.category.name,
+      nameKn: null,
+      slug: article.category.slug,
+      description: null,
+      icon: null,
+      color: null,
+      order: 0,
+      active: true,
+      createdAt: article.createdAt,
+      updatedAt: article.updatedAt,
+    } : null,
+    tags: article.articleTags?.map((t) => ({
+      id: t.tag.id,
+      name: t.tag.name,
+      slug: t.tag.slug,
+      createdAt: t.tag.createdAt,
+    })) || [],
+  } as unknown as KnowledgeArticleRecord;
 }
 
 export const knowledgeService = {
@@ -231,7 +248,7 @@ export const knowledgeService = {
     const category = await prisma.knowledgeCategory.create({
       data: {
         name: data.name,
-        nameKn: data.nameKn,
+        
         slug: data.slug || generateSlug(data.name),
         description: data.description,
         icon: data.icon,
@@ -264,7 +281,7 @@ export const knowledgeService = {
       categories: categories.map((c) => ({
         id: c.id,
         name: c.name,
-        nameKn: c.nameKn,
+        
         slug: c.slug,
         description: c.description,
         icon: c.icon,
@@ -288,7 +305,7 @@ export const knowledgeService = {
     return {
       id: category.id,
       name: category.name,
-      nameKn: category.nameKn,
+      
       slug: category.slug,
       description: category.description,
       icon: category.icon,
@@ -310,7 +327,7 @@ export const knowledgeService = {
     return {
       id: category.id,
       name: category.name,
-      nameKn: category.nameKn,
+      
       slug: category.slug,
       description: category.description,
       icon: category.icon,
@@ -328,7 +345,6 @@ export const knowledgeService = {
       where: { id },
       data: {
         ...(data.name && { name: data.name }),
-        ...(data.nameKn !== undefined && { nameKn: data.nameKn }),
         ...(data.slug && { slug: data.slug }),
         ...(data.description !== undefined && { description: data.description }),
         ...(data.icon !== undefined && { icon: data.icon }),

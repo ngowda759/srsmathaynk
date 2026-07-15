@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
 
     const results = await knowledgeService.searchAdvanced({
       query: searchQuery,
-      categoryId,
+      categoryId: categoryId || undefined,
       tagIds,
       keywords,
       publishedOnly,

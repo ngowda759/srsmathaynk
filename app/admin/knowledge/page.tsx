@@ -134,7 +134,7 @@ export default function KnowledgeBasePage() {
       {/* Categories */}
       <div className="flex flex-wrap gap-2">
         <Button
-          variant={selectedCategory === "all" ? "default" : "outline"}
+          variant={selectedCategory === "all" ? "primary" : "outline"}
           size="sm"
           onClick={() => setSelectedCategory("all")}
         >
@@ -143,7 +143,7 @@ export default function KnowledgeBasePage() {
         {categories.map((category) => (
           <Button
             key={category.id}
-            variant={selectedCategory === category.id ? "default" : "outline"}
+            variant={selectedCategory === category.id ? "primary" : "outline"}
             size="sm"
             onClick={() => setSelectedCategory(category.id)}
           >
