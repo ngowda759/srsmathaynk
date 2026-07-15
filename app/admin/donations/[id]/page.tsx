@@ -7,7 +7,7 @@ import toast from "react-hot-toast";
 import AdminPageHeader from "@/components/admin/common/AdminPageHeader";
 import DonationDetails from "@/components/admin/donations/DonationDetails";
 
-import { donationService } from "@/services/donation.service";
+import { getDonation } from "@/lib/api/donations";
 import { DonationRecord } from "@/types/donation";
 
 export default function DonationPage() {
@@ -26,7 +26,7 @@ export default function DonationPage() {
     async function loadDonation() {
       try {
         const data =
-          await donationService.getDonationById(id);
+          await getDonation(id);
 
         if (!data) {
           toast.error("Donation not found.");

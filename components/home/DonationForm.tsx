@@ -8,8 +8,8 @@ import Button from "@/components/ui/button";
 import Input from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
-import { donationService } from "@/services/donation.service";
-import { paymentModeOptions, PaymentMode } from "@/types/donation";
+import { createDonation } from "@/lib/api/donations";
+import { PaymentMethod } from "@/types/donation";
 import { useFinanceSettings } from "@/hooks/useFinanceSettings";
 
 export default function DonationForm() {
@@ -31,7 +31,7 @@ export default function DonationForm() {
   const [countdown, setCountdown] = useState(5);
 
   const [paymentMode, setPaymentMode] =
-    useState<PaymentMode>("upi");
+    useState<PaymentMethod>("UPI");
 
   const [submitting, setSubmitting] =
     useState(false);
@@ -98,16 +98,15 @@ export default function DonationForm() {
       const ref = `DON-${Date.now().toString(36).toUpperCase()}`;
       setDonationRef(ref);
       
-      await donationService.createDonation({
+      await createDonation({
         donorName,
-        email,
-        phone,
-        address,
-        purpose,
+        donorEmail: email,
+        donorPhone: phone,
+        donorAddress: address,
         campaignId,
         amount: Number(amount),
         message,
-        paymentMode,
+        paymentMethod: paymentMode,
       });
 
       setShowPaymentDialog(true);
@@ -132,7 +131,7 @@ export default function DonationForm() {
     setAmount("");
     setMessage("");
     setSelectedSevaId(null);
-    setPaymentMode("upi");
+    setPaymentMode("UPI");
     setShowPaymentDialog(false);
     setPaymentInitiated(false);
     setCountdown(5);
@@ -301,15 +300,15 @@ export default function DonationForm() {
               value={paymentMode}
               onChange={(e) =>
                 setPaymentMode(
-                  e.target.value as PaymentMode
+                  e.target.value as PaymentMethod
                 )
               }
               className="w-full rounded-lg border border-stone-300 bg-white px-4 py-3 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200"
             >
-              {upiEnabled && <option value="upi">UPI</option>}
-              {bankTransferEnabled && <option value="bank_transfer">Bank Transfer</option>}
-              <option value="cash">Cash</option>
-              <option value="other">Other</option>
+              {upiEnabled && <option value="UPI">UPI</option>}
+              {bankTransferEnabled && <option value="BANK_TRANSFER">Bank Transfer</option>}
+              <option value="CASH">Cash</option>
+              <option value="OTHER">Other</option>
             </select>
           </div>
 

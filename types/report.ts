@@ -15,9 +15,11 @@ export interface BookingReport {
 export interface DonationReport {
   total: number;
   pending: number;
-  received: number;
+  completed: number;
   failed: number;
+  refunded: number;
   totalAmount: number;
+  refundedAmount: number;
 }
 
 export interface ReportSummary {
