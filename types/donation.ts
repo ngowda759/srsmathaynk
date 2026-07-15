@@ -81,6 +81,9 @@ export interface DonationRequest {
   anonymous?: boolean;
   message?: string;
   dedication?: string;
+  receiptNumber?: string;
+  receiptUrl?: string;
+  status?: string;
 }
 
 // Campaign request for creating/updating campaigns

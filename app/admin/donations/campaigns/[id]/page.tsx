@@ -7,8 +7,7 @@ import toast from "react-hot-toast";
 import AdminPageHeader from "@/components/admin/common/AdminPageHeader";
 import Button from "@/components/ui/button";
 import Input from "@/components/ui/input";
-import Textarea from "@/components/ui/textarea";
-import Select from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { donationService } from "@/services/donation.service";
 import { DonationCampaignRecord, donationCategoryOptions, urgencyLevelOptions } from "@/types/donation";
 
@@ -225,7 +224,8 @@ export default function EditCampaignPage() {
                   <label className="mb-1 block text-sm font-medium text-stone-700">
                     Category
                   </label>
-                  <Select
+                  <select
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                     value={formData.category}
                     onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                   >
@@ -235,7 +235,7 @@ export default function EditCampaignPage() {
                         {opt.label}
                       </option>
                     ))}
-                  </Select>
+                  </select>
                 </div>
               </div>
 
@@ -244,7 +244,8 @@ export default function EditCampaignPage() {
                   <label className="mb-1 block text-sm font-medium text-stone-700">
                     Urgency Level
                   </label>
-                  <Select
+                  <select
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                     value={formData.urgencyLevel}
                     onChange={(e) => setFormData({ ...formData, urgencyLevel: e.target.value })}
                   >
@@ -253,7 +254,7 @@ export default function EditCampaignPage() {
                         {opt.label}
                       </option>
                     ))}
-                  </Select>
+                  </select>
                 </div>
 
                 <div className="flex items-center gap-4 pt-6">

@@ -100,14 +100,13 @@ export default function DonationForm() {
       
       await donationService.createDonation({
         donorName,
-        email,
-        phone,
-        address,
-        purpose,
+        donorEmail: email,
+        donorPhone: phone,
+        donorAddress: address,
         campaignId,
         amount: Number(amount),
         message,
-        paymentMode,
+        paymentMethod: paymentMode,
       });
 
       setShowPaymentDialog(true);

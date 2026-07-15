@@ -27,12 +27,12 @@ export const donationColumns: CrudColumn<DonationRecord>[] = [
   {
     key: "campaign",
     header: "Campaign",
-    formatter: (value) => (value as DonationCampaignRecord)?.title || "General",
+    formatter: (value, _row): React.ReactNode => (value as DonationCampaignRecord)?.title || "General",
   },
   {
     key: "paymentMethod",
     header: "Payment",
-    formatter: (value) => {
+    formatter: (value, _row): React.ReactNode => {
       if (!value) return "-";
       const methods: Record<string, string> = {
         CARD: "Card",
@@ -43,13 +43,14 @@ export const donationColumns: CrudColumn<DonationRecord>[] = [
         CASH: "Cash",
         CHEQUE: "Cheque",
       };
-      return methods[value as string] || value;
+      const result = methods[value as string] || String(value);
+      return result;
     },
   },
   {
     key: "status",
     header: "Status",
-    formatter: (value) => {
+    formatter: (value, _row): React.ReactNode => {
       const statusMap: Record<string, { label: string; color: string }> = {
         PENDING: { label: "Pending", color: "bg-yellow-100 text-yellow-800" },
         PROCESSING: { label: "Processing", color: "bg-blue-100 text-blue-800" },
@@ -65,7 +66,7 @@ export const donationColumns: CrudColumn<DonationRecord>[] = [
   {
     key: "receiptNumber",
     header: "Receipt",
-    formatter: (value) => value || "-",
+    formatter: (value, _row): React.ReactNode => (value as string) || "-",
   },
   {
     key: "actions",

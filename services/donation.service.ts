@@ -248,7 +248,7 @@ export const donationService = {
     if (data.description !== undefined) updateData.description = data.description;
     if (data.descriptionKn !== undefined) updateData.descriptionKn = data.descriptionKn;
     if (data.targetAmount !== undefined) updateData.targetAmount = data.targetAmount ? new Prisma.Decimal(data.targetAmount) : null;
-    if (data.imageId !== undefined) updateData.imageId = data.imageId;
+    if (data.imageId !== undefined) (updateData as any).imageId = data.imageId;
     if (data.videoUrl !== undefined) updateData.videoUrl = data.videoUrl;
     if (data.active !== undefined) updateData.active = data.active;
     if (data.featured !== undefined) updateData.featured = data.featured;
