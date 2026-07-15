@@ -1,0 +1,75 @@
+/**
+ * ${MODULE_NAME} Types
+ * 
+ * Type definitions for ${MODULE_NAME} module.
+ */
+
+// =============================================================================
+// ENUMS
+// =============================================================================
+
+export type ${ModuleName}Status = "DRAFT" | "PUBLISHED" | "ARCHIVED";
+
+// =============================================================================
+// CORE TYPES
+// =============================================================================
+
+export interface ${ModuleName}Type {
+  id: string;
+  name: string;
+  description?: string | null;
+  status: ${ModuleName}Status;
+  featured: boolean;
+  // Add your fields here
+  
+  // Audit fields
+  createdAt: Date;
+  updatedAt: Date;
+  deletedAt?: Date | null;
+  createdById?: string | null;
+  updatedById?: string | null;
+}
+
+export interface ${ModuleName}Request {
+  name: string;
+  description?: string;
+  status?: ${ModuleName}Status;
+  featured?: boolean;
+  // Add your fields here
+}
+
+export interface ${ModuleName}Query {
+  status?: ${ModuleName}Status;
+  featured?: boolean;
+  search?: string;
+  page?: number;
+  limit?: number;
+}
+
+// =============================================================================
+// UI HELPERS
+// =============================================================================
+
+export const ${MODULE_NAME}_STATUS_LABELS: Record<${ModuleName}Status, string> = {
+  DRAFT: "Draft",
+  PUBLISHED: "Published",
+  ARCHIVED: "Archived",
+};
+
+// =============================================================================
+// STATS & AGGREGATIONS
+// =============================================================================
+
+export interface ${ModuleName}Stats {
+  total: number;
+  featured: number;
+  // Add your stats here
+}
+
+// =============================================================================
+// BACKWARD COMPATIBILITY
+// =============================================================================
+
+// Export types with legacy names for backward compatibility
+export type ${ModuleName} = ${ModuleName}Type;
+export type ${ModuleName}Media = ${ModuleName}Type;

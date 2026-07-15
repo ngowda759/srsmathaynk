@@ -1,0 +1,63 @@
+/**
+ * ${MODULE_NAME} API Route - CRUD operations
+ * 
+ * GET    /api/${moduleName} - List all ${moduleName}
+ * POST   /api/${moduleName} - Create a new ${moduleName}
+ */
+
+import { NextRequest, NextResponse } from "next/server";
+import { ${moduleName}Service } from "@/services/${moduleName}.service";
+import { ${ModuleName}Request } from "@/services/${moduleName}.service";
+
+// GET /api/${moduleName} - List all ${moduleName}
+export async function GET(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+
+    // Parse query parameters
+    // const featured = searchParams.get("featured");
+    // const search = searchParams.get("search");
+
+    const ${moduleName}s = await ${moduleName}Service.get${ModuleName}s({});
+
+    return NextResponse.json({
+      success: true,
+      data: ${moduleName}s,
+      count: ${moduleName}s.length,
+    });
+  } catch (error) {
+    console.error("[API] Failed to fetch ${moduleName}:", error);
+    return NextResponse.json(
+      { success: false, error: "Failed to fetch ${moduleName}" },
+      { status: 500 }
+    );
+  }
+}
+
+// POST /api/${moduleName} - Create a new ${moduleName}
+export async function POST(request: NextRequest) {
+  try {
+    const body: ${ModuleName}Request = await request.json();
+
+    // Validation
+    if (!body.name) {
+      return NextResponse.json(
+        { success: false, error: "Name is required" },
+        { status: 400 }
+      );
+    }
+
+    const ${moduleName} = await ${moduleName}Service.create${ModuleName}(body);
+
+    return NextResponse.json(
+      { success: true, data: ${moduleName}, message: "${ModuleName} created successfully" },
+      { status: 201 }
+    );
+  } catch (error) {
+    console.error("[API] Failed to create ${moduleName}:", error);
+    return NextResponse.json(
+      { success: false, error: "Failed to create ${moduleName}" },
+      { status: 500 }
+    );
+  }
+}

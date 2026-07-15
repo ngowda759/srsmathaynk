@@ -1,0 +1,188 @@
+/**
+ * ${MODULE_NAME} Service Tests
+ */
+
+import { describe, it, expect, beforeEach, vi } from "vitest";
+
+// Mock the repository
+vi.mock("@/lib/db", () => ({
+  prisma: {
+    ${moduleName}: {
+      findMany: vi.fn(),
+      findUnique: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+    },
+  },
+}));
+
+// Import after mocking
+import { ${moduleName}Service } from "@/services/${moduleName}.service";
+
+describe("${ModuleName}Service", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  describe("get${ModuleName}s", () => {
+    it("should return all ${moduleName}s", async () => {
+      const mock${ModuleName}s = [
+        { id: "1", name: "${ModuleName} 1", createdAt: new Date(), updatedAt: new Date() },
+        { id: "2", name: "${ModuleName} 2", createdAt: new Date(), updatedAt: new Date() },
+      ];
+
+      const { prisma } = await import("@/lib/db");
+      vi.mocked(prisma.${moduleName}.findMany).mockResolvedValue(mock${ModuleName}s);
+
+      const result = await ${moduleName}Service.get${ModuleName}s();
+
+      expect(result).toHaveLength(2);
+      expect(prisma.${moduleName}.findMany).toHaveBeenCalledWith({
+        where: { deletedAt: null },
+        orderBy: { createdAt: "desc" },
+        take: 100,
+      });
+    });
+
+    it("should return empty array when no ${moduleName}s exist", async () => {
+      const { prisma } = await import("@/lib/db");
+      vi.mocked(prisma.${moduleName}.findMany).mockResolvedValue([]);
+
+      const result = await ${moduleName}Service.get${ModuleName}s();
+
+      expect(result).toHaveLength(0);
+    });
+  });
+
+  describe("get${ModuleName}", () => {
+    it("should return a ${moduleName} by ID", async () => {
+      const mock${ModuleName} = {
+        id: "1",
+        name: "${ModuleName} 1",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      const { prisma } = await import("@/lib/db");
+      vi.mocked(prisma.${moduleName}.findUnique).mockResolvedValue(mock${ModuleName});
+
+      const result = await ${moduleName}Service.get${ModuleName}("1");
+
+      expect(result).not.toBeNull();
+      expect(result?.id).toBe("1");
+    });
+
+    it("should return null for non-existent ${moduleName}", async () => {
+      const { prisma } = await import("@/lib/db");
+      vi.mocked(prisma.${moduleName}.findUnique).mockResolvedValue(null);
+
+      const result = await ${moduleName}Service.get${ModuleName}("999");
+
+      expect(result).toBeNull();
+    });
+
+    it("should return null for deleted ${moduleName}", async () => {
+      const { prisma } = await import("@/lib/db");
+      vi.mocked(prisma.${moduleName}.findUnique).mockResolvedValue({
+        id: "1",
+        name: "${ModuleName} 1",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        deletedAt: new Date(),
+      });
+
+      const result = await ${moduleName}Service.get${ModuleName}("1");
+
+      expect(result).toBeNull();
+    });
+  });
+
+  describe("create${ModuleName}", () => {
+    it("should create a new ${moduleName}", async () => {
+      const input = { name: "New ${ModuleName}" };
+      const mock${ModuleName} = {
+        id: "1",
+        ...input,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      const { prisma } = await import("@/lib/db");
+      vi.mocked(prisma.${moduleName}.create).mockResolvedValue(mock${ModuleName});
+
+      const result = await ${moduleName}Service.create${ModuleName}(input);
+
+      expect(result.id).toBe("1");
+      expect(result.name).toBe("New ${ModuleName}");
+    });
+
+    it("should throw error for empty name", async () => {
+      await expect(${moduleName}Service.create${ModuleName}({ name: "" })).rejects.toThrow();
+    });
+  });
+
+  describe("update${ModuleName}", () => {
+    it("should update an existing ${moduleName}", async () => {
+      const existing${ModuleName} = {
+        id: "1",
+        name: "${ModuleName} 1",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      const updated${ModuleName} = {
+        ...existing${ModuleName},
+        name: "Updated ${ModuleName}",
+      };
+
+      const { prisma } = await import("@/lib/db");
+      vi.mocked(prisma.${moduleName}.findUnique).mockResolvedValue(existing${ModuleName});
+      vi.mocked(prisma.${moduleName}.update).mockResolvedValue(updated${ModuleName});
+
+      const result = await ${moduleName}Service.update${ModuleName}("1", { name: "Updated ${ModuleName}" });
+
+      expect(result.name).toBe("Updated ${ModuleName}");
+    });
+
+    it("should throw error for non-existent ${moduleName}", async () => {
+      const { prisma } = await import("@/lib/db");
+      vi.mocked(prisma.${moduleName}.findUnique).mockResolvedValue(null);
+
+      await expect(${moduleName}Service.update${ModuleName}("999", { name: "Test" })).rejects.toThrow(
+        "${ModuleName} not found"
+      );
+    });
+  });
+
+  describe("delete${ModuleName}", () => {
+    it("should soft delete a ${moduleName}", async () => {
+      const mock${ModuleName} = {
+        id: "1",
+        name: "${ModuleName} 1",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      const { prisma } = await import("@/lib/db");
+      vi.mocked(prisma.${moduleName}.findUnique).mockResolvedValue(mock${ModuleName});
+      vi.mocked(prisma.${moduleName}.update).mockResolvedValue({
+        ...mock${ModuleName},
+        deletedAt: new Date(),
+      });
+
+      await expect(${moduleName}Service.delete${ModuleName}("1")).resolves.not.toThrow();
+      expect(prisma.${moduleName}.update).toHaveBeenCalledWith({
+        where: { id: "1" },
+        data: { deletedAt: expect.any(Date) },
+      });
+    });
+
+    it("should throw error for non-existent ${moduleName}", async () => {
+      const { prisma } = await import("@/lib/db");
+      vi.mocked(prisma.${moduleName}.findUnique).mockResolvedValue(null);
+
+      await expect(${moduleName}Service.delete${ModuleName}("999")).rejects.toThrow("${ModuleName} not found");
+    });
+  });
+});
