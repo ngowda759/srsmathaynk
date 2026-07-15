@@ -1,54 +1,30 @@
-"use client";
-
-import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 
 import AdminPageHeader from "@/components/admin/common/AdminPageHeader";
-import SearchBox from "@/components/admin/common/SearchBox";
 import UserStats from "@/components/admin/users/UserStats";
 import UserTable from "@/components/admin/users/UserTable";
 import AdminAuthGuard from "@/components/admin/layout/AdminAuthGuard";
+import UsersPageClient from "./UsersPageClient";
 
 import { TempleUser } from "@/types/user";
-import { userService } from "@/services/user.service";
 
-function UsersPageContent() {
-  const [users, setUsers] = useState<TempleUser[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
+export const dynamic = "force-dynamic";
 
-  useEffect(() => {
-    async function loadUsers() {
-      try {
-        const data = await userService.getUsers();
-        console.log("Users:", data);
-        setUsers(data);
-      } catch (error) {
-        console.error("Failed to load users:", error);
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadUsers();
-  }, []);
+async function getUsers(): Promise<TempleUser[]> {
+  const { userService } = await import("@/services/user.service");
+  return userService.getUsers();
+}
 
-  const filteredUsers = useMemo(() => {
-    const keyword = search.toLowerCase();
+interface UsersPageProps {
+  searchParams: Promise<{ search?: string }>;
+}
 
-    return users.filter((user) => {
-      const name = user.name ?? "";
-      const email = user.email ?? "";
-      const role = user.role ?? "";
-
-      return (
-        name.toLowerCase().includes(keyword) ||
-        email.toLowerCase().includes(keyword) ||
-        role.toLowerCase().includes(keyword)
-      );
-    });
-  }, [users, search]);
+async function UsersPageContent({ searchParams }: UsersPageProps) {
+  const params = await searchParams;
+  const search = params.search || "";
+  const users = await getUsers();
 
   return (
     <div className="space-y-4">
@@ -79,19 +55,7 @@ function UsersPageContent() {
         }
       />
 
-      <SearchBox
-        value={search}
-        onChange={setSearch}
-        placeholder="Search users..."
-      />
-
-      {loading ? (
-        <div className="rounded-xl border bg-white p-8">
-          Loading users...
-        </div>
-      ) : (
-        <UserTable users={filteredUsers} />
-      )}
+      <UsersPageClient users={users} />
     </div>
   );
 }
@@ -99,7 +63,7 @@ function UsersPageContent() {
 export default function UsersPage() {
   return (
     <AdminAuthGuard requiredPermission="users">
-      <UsersPageContent />
+      <UsersPageContent searchParams={Promise.resolve({})} />
     </AdminAuthGuard>
   );
 }

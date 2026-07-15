@@ -4,7 +4,15 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { galleryService } from "@/services/gallery.service";
+
+
+export const dynamic = "force-dynamic";
+
+// Lazy load service to prevent Prisma initialization at build time
+async function getgalleryService() {
+  const { galleryService } = await import("@/services/gallery.service");
+  return galleryService;
+}
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -20,7 +28,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     switch (action) {
       case "toggleFeatured":
-        result = await galleryService.toggleAlbumFeatured(id);
+        result = await (await getgalleryService()).toggleAlbumFeatured(id);
         return NextResponse.json({
           success: true,
           data: result,
@@ -28,7 +36,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         });
 
       case "togglePublished":
-        result = await galleryService.toggleAlbumPublished(id);
+        result = await (await getgalleryService()).toggleAlbumPublished(id);
         return NextResponse.json({
           success: true,
           data: result,
@@ -43,7 +51,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
             { status: 400 }
           );
         }
-        await galleryService.reorderAlbumItems(id, itemIds);
+        await (await getgalleryService()).reorderAlbumItems(id, itemIds);
         return NextResponse.json({
           success: true,
           message: "Album items reordered successfully",

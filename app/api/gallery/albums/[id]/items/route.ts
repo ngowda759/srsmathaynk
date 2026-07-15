@@ -6,7 +6,15 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { galleryService } from "@/services/gallery.service";
+
+
+export const dynamic = "force-dynamic";
+
+// Lazy load service to prevent Prisma initialization at build time
+async function getgalleryService() {
+  const { galleryService } = await import("@/services/gallery.service");
+  return galleryService;
+}
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -20,7 +28,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "50");
 
-    const result = await galleryService.getAlbumWithItems(id, page, limit);
+    const result = await (await getgalleryService()).getAlbumWithItems(id, page, limit);
 
     return NextResponse.json({
       success: true,
@@ -52,7 +60,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    await galleryService.addItemToAlbum(itemId, id, displayOrder || 0);
+    await (await getgalleryService()).addItemToAlbum(itemId, id, displayOrder || 0);
 
     return NextResponse.json({
       success: true,
@@ -80,7 +88,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    await galleryService.removeItemFromAlbum(itemId, id);
+    await (await getgalleryService()).removeItemFromAlbum(itemId, id);
 
     return NextResponse.json({
       success: true,

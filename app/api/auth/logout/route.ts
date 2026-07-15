@@ -2,11 +2,18 @@
  * Logout API Route
  */
 import { NextResponse } from "next/server"
-import { createServerClient } from "@/lib/supabase/server"
+
+
+export const dynamic = "force-dynamic";
+
+async function getSupabase() {
+  const { createServerClient } = await import("@/lib/supabase/server");
+  return createServerClient();
+}
 
 export async function POST() {
   try {
-    const supabase = await createServerClient()
+    const supabase = await getSupabase()
     await supabase.auth.signOut()
 
     return NextResponse.json({ success: true })

@@ -1,87 +1,25 @@
-"use client";
-import { useEffect, useMemo, useState, useCallback } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import toast from "react-hot-toast";
+import { Suspense } from "react";
 import AdminPageHeader from "@/components/admin/common/AdminPageHeader";
-import SearchBox from "@/components/admin/common/SearchBox";
-import CrudTable from "@/components/admin/crud/CrudTable";
 import Button from "@/components/ui/button";
-import { announcementService } from "@/services/announcement.service";
+import AnnouncementsPageClient from "./AnnouncementsPageClient";
 import { Announcement } from "@/types/announcement";
-import { announcementColumns } from "./columns";
-export default function AnnouncementsPage() {
-  const router = useRouter();
-  const [announcements, setAnnouncements] = useState<
-    Announcement[]
-  >([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
-  const loadAnnouncements = useCallback(async () => {
-    try {
-      setLoading(true);
-      const data =
-        await announcementService.getAnnouncements();
-      setAnnouncements(data);
-    } catch (error) {
-      console.error(
-        "Failed to load announcements:",
-        error
-      );
-      toast.error(
-        "Failed to load announcements."
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, []);
 
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    loadAnnouncements();
-  }, []);
+export const dynamic = "force-dynamic";
 
-  const filteredAnnouncements = useMemo(() => {
-    const keyword = search.toLowerCase().trim();
-    if (!keyword) return announcements;
-    return announcements.filter((item) =>
-      [
-        item.title,
-        item.message,
-        item.link ?? "",
-      ].some((value) =>
-        value.toLowerCase().includes(keyword)
-      )
-    );
-  }, [announcements, search]);
-  async function handleDelete(
-    announcement: Announcement
-  ) {
-    if (
-      !window.confirm(
-        `Delete "${announcement.title}"?`
-      )
-    ) {
-      return;
-    }
-    try {
-      await announcementService.deleteAnnouncement(
-        announcement.id
-      );
-      toast.success(
-        "Announcement deleted successfully."
-      );
-      await loadAnnouncements();
-    } catch (error) {
-      console.error(
-        "Failed to delete announcement:",
-        error
-      );
-      toast.error(
-        "Failed to delete announcement."
-      );
-    }
-  }
+async function getAnnouncements(): Promise<Announcement[]> {
+  const { announcementService } = await import("@/services/announcement.service");
+  return announcementService.getAnnouncements();
+}
+
+interface AnnouncementsPageProps {
+  searchParams: Promise<{ search?: string }>;
+}
+
+export default async function AnnouncementsPage({ searchParams }: AnnouncementsPageProps) {
+  const params = await searchParams;
+  const announcements = await getAnnouncements();
+
   return (
     <div className="space-y-8">
       <AdminPageHeader
@@ -95,29 +33,9 @@ export default function AnnouncementsPage() {
           </Button>
         }
       />
-      <SearchBox
-        value={search}
-        onChange={setSearch}
-        placeholder="Search announcements..."
-      />
-      {loading ? (
-        <div className="rounded-xl border bg-white p-8">
-          Loading announcements...
-        </div>
-      ) : (
-        <CrudTable<Announcement>
-          data={filteredAnnouncements}
-          columns={announcementColumns}
-          emptyMessage="No announcements found."
-          actions={{
-            onEdit: (announcement) =>
-              router.push(
-                `/admin/announcements/${announcement.id}/edit`
-              ),
-            onDelete: handleDelete,
-          }}
-        />
-      )}
+      <Suspense fallback={<div className="rounded-xl border bg-white p-8">Loading announcements...</div>}>
+        <AnnouncementsPageClient announcements={announcements} />
+      </Suspense>
     </div>
   );
 }
