@@ -90,7 +90,7 @@ export const memberService = {
       data: {
         userId: data.memberId || await generateMemberId(),
         name: data.name,
-        email: data.email,
+        email: data.email || "",
         phone: data.phone,
         address: data.address,
         isActive: data.active ?? true,

@@ -9,7 +9,8 @@ export type { Profile, Role, UserRole };
 // Volunteer record
 export interface VolunteerRecord {
   id: string;
-  memberId: string;
+  memberId?: string;
+  volunteerId?: string;
   name: string;
   email: string;
   phone: string | null;
@@ -18,10 +19,16 @@ export interface VolunteerRecord {
   address: string | null;
   skills: string[];
   availability: string;
-  joinedDate: Date;
+  joinedDate?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
+
+// Member record (same as VolunteerRecord for compatibility)
+export interface Member extends VolunteerRecord {}
+
+// Volunteer alias
+export type Volunteer = VolunteerRecord;
 
 // Team record
 export interface TeamRecord {
@@ -91,11 +98,12 @@ export interface VolunteerStats {
   attendanceRate: number;
 }
 
-// Volunteer request
+// Volunteer/Member request
 export interface VolunteerRequest {
   memberId?: string;
+  volunteerId?: string;
   name: string;
-  email: string;
+  email?: string;
   phone?: string;
   sex: "Male" | "Female" | "Other";
   active?: boolean;
@@ -103,6 +111,9 @@ export interface VolunteerRequest {
   skills?: string[];
   availability?: string;
 }
+
+// Member request (alias)
+export type MemberRequest = VolunteerRequest;
 
 // Team request
 export interface TeamRequest {
