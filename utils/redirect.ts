@@ -5,8 +5,6 @@ export function getDashboardRoute(profile: UserProfile | null) {
 
   switch (profile.role) {
     case "SUPER_ADMIN":
-      return "/admin";
-
     case "ADMIN":
       return "/admin";
 

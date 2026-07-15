@@ -1,6 +1,6 @@
 "use client"
 
-import { Suspense, useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import toast from "react-hot-toast"
@@ -24,7 +24,7 @@ const schema = z.object({
 
 type ResetPasswordValues = z.infer<typeof schema>
 
-function ResetPasswordContent() {
+function ResetPasswordForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [showPassword, setShowPassword] = useState(false)
@@ -39,7 +39,7 @@ function ResetPasswordContent() {
     const verifyToken = async () => {
       // Check for OAuth reset or session-based reset
       const { error } = await supabase.auth.getSession()
-      
+
       // If we have a session from the reset link, we're good
       const { data: { session } } = await supabase.auth.getSession()
       if (session) {
@@ -51,7 +51,7 @@ function ResetPasswordContent() {
       // Check URL for error (e.g., token expired)
       const errorParam = searchParams.get("error")
       const errorDescription = searchParams.get("error_description")
-      
+
       if (errorParam) {
         setTokenError(errorDescription || "Invalid or expired reset link")
         setIsLoading(false)
@@ -69,7 +69,7 @@ function ResetPasswordContent() {
         }
         setIsValidToken(true)
       }
-      
+
       setIsLoading(false)
     }
 
@@ -104,121 +104,111 @@ function ResetPasswordContent() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-amber-50/50 via-orange-50/30 to-stone-50">
-        <Card className="w-full max-w-md p-8">
-          <div className="flex flex-col items-center">
-            <div className="w-12 h-12 border-4 border-amber-200 border-t-amber-600 rounded-full animate-spin mb-4" />
-            <p className="text-stone-600">Verifying reset link...</p>
-          </div>
-        </Card>
-      </div>
+      <Card className="w-full max-w-md p-8">
+        <div className="flex flex-col items-center">
+          <div className="w-12 h-12 border-4 border-amber-200 border-t-amber-600 rounded-full animate-spin mb-4" />
+          <p className="text-stone-600">Verifying reset link...</p>
+        </div>
+      </Card>
     )
   }
 
   if (tokenError) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-amber-50/50 via-orange-50/30 to-stone-50">
-        <Card className="w-full max-w-md p-8">
-          <div className="text-center space-y-4">
-            <h2 className="text-2xl font-bold text-red-600">Invalid Reset Link</h2>
-            <p className="text-stone-600">{tokenError}</p>
-            <p className="text-stone-500 text-sm">
-              Please request a new password reset link.
-            </p>
-            <Button onClick={() => router.push("/forgot-password")}>
-              Request New Link
-            </Button>
-            <p className="pt-4">
-              <Link href="/login" className="text-orange-600 hover:underline">
-                Back to Sign In
-              </Link>
-            </p>
-          </div>
-        </Card>
-      </div>
+      <Card className="w-full max-w-md p-8">
+        <div className="text-center space-y-4">
+          <h2 className="text-2xl font-bold text-red-600">Invalid Reset Link</h2>
+          <p className="text-stone-600">{tokenError}</p>
+          <p className="text-stone-500 text-sm">
+            Please request a new password reset link.
+          </p>
+          <Button onClick={() => router.push("/forgot-password")}>
+            Request New Link
+          </Button>
+          <p className="pt-4">
+            <Link href="/login" className="text-orange-600 hover:underline">
+              Back to Sign In
+            </Link>
+          </p>
+        </div>
+      </Card>
     )
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-amber-50/50 via-orange-50/30 to-stone-50">
-      <Card className="w-full max-w-md">
-        <div className="p-8">
-          <div className="text-center space-y-3">
-            <h2 className="text-2xl font-bold font-heading">Set New Password</h2>
-            <p className="text-stone-600">
-              Enter your new password below.
-            </p>
+    <Card className="w-full max-w-md">
+      <div className="p-8">
+        <div className="text-center space-y-3">
+          <h2 className="text-2xl font-bold font-heading">Set New Password</h2>
+          <p className="text-stone-600">
+            Enter your new password below.
+          </p>
+        </div>
+
+        <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-5">
+          <div className="relative">
+            <Input
+              label="New Password"
+              type={showPassword ? "text" : "password"}
+              placeholder="Enter new password"
+              error={errors.password?.message}
+              {...register("password")}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-4 top-11 text-stone-500"
+            >
+              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+            </button>
           </div>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-5">
-            <div className="relative">
-              <Input
-                label="New Password"
-                type={showPassword ? "text" : "password"}
-                placeholder="Enter new password"
-                error={errors.password?.message}
-                {...register("password")}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-4 top-11 text-stone-500"
-              >
-                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-              </button>
-            </div>
+          <div className="relative">
+            <Input
+              label="Confirm Password"
+              type={showConfirm ? "text" : "password"}
+              placeholder="Confirm new password"
+              error={errors.confirmPassword?.message}
+              {...register("confirmPassword")}
+            />
+            <button
+              type="button"
+              onClick={() => setShowConfirm(!showConfirm)}
+              className="absolute right-4 top-11 text-stone-500"
+            >
+              {showConfirm ? <EyeOff size={20} /> : <Eye size={20} />}
+            </button>
+          </div>
 
-            <div className="relative">
-              <Input
-                label="Confirm Password"
-                type={showConfirm ? "text" : "password"}
-                placeholder="Confirm new password"
-                error={errors.confirmPassword?.message}
-                {...register("confirmPassword")}
-              />
-              <button
-                type="button"
-                onClick={() => setShowConfirm(!showConfirm)}
-                className="absolute right-4 top-11 text-stone-500"
-              >
-                {showConfirm ? <EyeOff size={20} /> : <Eye size={20} />}
-              </button>
-            </div>
+          <Button type="submit" loading={isSubmitting}>
+            Update Password
+          </Button>
 
-            <Button type="submit" loading={isSubmitting}>
-              Update Password
-            </Button>
-
-            <p className="text-center text-sm text-stone-600">
-              Remembered your password?{" "}
-              <Link href="/login" className="font-medium text-orange-600 hover:underline">
-                Sign in
-              </Link>
-            </p>
-          </form>
-        </div>
-      </Card>
-    </div>
-  )
-}
-
-function LoadingFallback() {
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-amber-50/50 via-orange-50/30 to-stone-50">
-      <Card className="w-full max-w-md p-8">
-        <div className="flex flex-col items-center">
-          <div className="w-12 h-12 border-4 border-amber-200 border-t-amber-600 rounded-full animate-spin mb-4" />
-          <p className="text-stone-600">Loading...</p>
-        </div>
-      </Card>
-    </div>
+          <p className="text-center text-sm text-stone-600">
+            Remembered your password?{" "}
+            <Link href="/login" className="font-medium text-orange-600 hover:underline">
+              Sign in
+            </Link>
+          </p>
+        </form>
+      </div>
+    </Card>
   )
 }
 
 export default function ResetPasswordPage() {
   return (
-    <Suspense fallback={<LoadingFallback />}>
-      <ResetPasswordContent />
-    </Suspense>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-amber-50/50 via-orange-50/30 to-stone-50">
+      <Suspense fallback={
+        <Card className="w-full max-w-md p-8">
+          <div className="flex flex-col items-center">
+            <div className="w-12 h-12 border-4 border-amber-200 border-t-amber-600 rounded-full animate-spin mb-4" />
+            <p className="text-stone-600">Loading...</p>
+          </div>
+        </Card>
+      }>
+        <ResetPasswordForm />
+      </Suspense>
+    </div>
   )
 }

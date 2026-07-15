@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ArrowLeft, Save, RotateCcw, Plus, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
 import Link from "next/link";
@@ -101,7 +101,8 @@ const defaultData: FuturePlansData = {
 };
 
 export default function FuturePlansSettingsPage() {
-  const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving] = useState(false);
   const [data, setData] = useState<FuturePlansData>(defaultData);
 
   async function saveData() {
@@ -143,6 +144,14 @@ export default function FuturePlansSettingsPage() {
         plans: prev.plans.filter((p) => p.id !== id),
       }));
     }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex h-64 items-center justify-center">
+        <div className="h-12 w-12 animate-spin rounded-full border-4 border-emerald-600 border-t-transparent" />
+      </div>
+    );
   }
 
   return (

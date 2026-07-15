@@ -83,9 +83,9 @@ export function AIChatProvider({ children }: AIChatProviderProps) {
   // Load user's chat sessions when user logs in
   useEffect(() => {
     async function loadUserSessions() {
-      if (user?.uid) {
+      if (user?.id) {
         try {
-          const sessions = await getUserChatSessions(user.uid);
+          const sessions = await getUserChatSessions(user.id);
           setUserSessions(sessions.map(s => s.id));
         } catch (err) {
           console.error("Failed to load user sessions:", err);
@@ -93,7 +93,7 @@ export function AIChatProvider({ children }: AIChatProviderProps) {
       }
     }
     loadUserSessions();
-  }, [user?.uid]);
+  }, [user?.id]);
 
   // Save messages to Firebase
   const saveToFirebase = useCallback(async (message: AIMessage, currentSessionId: string | null) => {
@@ -159,7 +159,7 @@ export function AIChatProvider({ children }: AIChatProviderProps) {
         body: JSON.stringify({
           messages: [...messages, userMessage],
           sessionId: currentSessionId,
-          userId: user?.uid || null,
+          userId: user?.id || null,
           detectedLanguage: langDetection.language,
         }),
       });
@@ -263,7 +263,7 @@ export function AIChatProvider({ children }: AIChatProviderProps) {
         body: JSON.stringify({
           messages: messagesWithoutLastAssistant,
           sessionId,
-          userId: user?.uid || null,
+          userId: user?.id || null,
         }),
       });
 

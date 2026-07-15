@@ -44,15 +44,16 @@ export const logger = {
 
   error(message: string, error?: Error | unknown, meta?: Record<string, unknown>) {
     if (currentLevel <= LogLevel.ERROR) {
-      const errorMeta = {
-        ...meta,
-        ...(error instanceof Error && {
-          errorName: error.name,
-          errorMessage: error.message,
-          stack: error.stack,
-        }),
-        ...(!(error instanceof Error) && error && { error: String(error) }),
+      const errorMeta: Record<string, unknown> = { ...meta }
+      
+      if (error instanceof Error) {
+        errorMeta.errorName = error.name
+        errorMeta.errorMessage = error.message
+        errorMeta.stack = error.stack
+      } else if (error) {
+        errorMeta.error = String(error)
       }
+      
       console.error(formatMessage("ERROR", message, errorMeta))
     }
   },

@@ -1,11 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { Building2, BookOpen, Heart, GraduationCap, Music, Sparkles } from "lucide-react";
 
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import Breadcrumb from "@/components/calendar/Breadcrumb";
-import { Building2, BookOpen, Heart, GraduationCap, Music, Sparkles } from "lucide-react";
 
 interface FuturePlan {
   id: string;
@@ -94,9 +93,10 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
 };
 
 export default function FuturePlansPage() {
-  const [data] = useState<FuturePlansData>(defaultFuturePlans);
-
-  const activePlans = data.plans.filter((p) => p.isActive).sort((a, b) => a.order - b.order);
+  const data = defaultFuturePlans;
+  const activePlans = data.plans
+    .filter((p) => p.isActive)
+    .sort((a, b) => a.order - b.order);
 
   return (
     <>
@@ -117,7 +117,7 @@ export default function FuturePlansPage() {
 
           <div className="relative mx-auto max-w-7xl px-6">
             <Breadcrumb current="Future Plans" />
-            <div className="text-center mt-4">
+            <div className="mt-4 text-center">
               <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-white/20 px-5 py-2 backdrop-blur">
                 <Sparkles className="h-5 w-5 text-emerald-200" />
                 <span className="text-sm font-medium text-white">Vision 2025+</span>
@@ -126,13 +126,13 @@ export default function FuturePlansPage() {
               <h1 className="text-4xl font-bold text-white md:text-5xl">
                 {data.heading}
               </h1>
-              <p className="mx-auto mt-4 text-2xl text-emerald-100 font-serif">
+              <p className="mx-auto mt-4 font-serif text-2xl text-emerald-100">
                 {data.headingKannada}
               </p>
               <p className="mx-auto mt-6 max-w-3xl text-xl text-emerald-100">
                 {data.subheading}
               </p>
-              <p className="mx-auto mt-2 max-w-3xl text-lg text-emerald-200 font-serif">
+              <p className="mx-auto mt-2 max-w-3xl font-serif text-lg text-emerald-200">
                 {data.subheadingKannada}
               </p>
             </div>
@@ -163,7 +163,7 @@ export default function FuturePlansPage() {
                         <h3 className="text-2xl font-bold text-stone-900">
                           {plan.title}
                         </h3>
-                        <p className="mt-1 text-lg text-emerald-600 font-serif">
+                        <p className="mt-1 font-serif text-lg text-emerald-600">
                           {plan.titleKannada}
                         </p>
 
@@ -171,7 +171,7 @@ export default function FuturePlansPage() {
                         <p className="mt-4 leading-relaxed text-stone-600">
                           {plan.description}
                         </p>
-                        <p className="mt-2 leading-relaxed text-stone-600 font-serif italic">
+                        <p className="mt-2 font-serif italic leading-relaxed text-stone-600">
                           {plan.descriptionKannada}
                         </p>
                       </div>

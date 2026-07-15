@@ -149,7 +149,7 @@ export default function SevaBooking() {
         sevaId: selectedSeva.id,
         sevaTitle: selectedSeva.title,
         sevaAmount: selectedSeva.sevaAmount,
-        userId: user.uid,
+        userId: user.id,
         userName: name || profile?.name || "",
         userEmail: email || user.email || "",
         userPhone: phone,
