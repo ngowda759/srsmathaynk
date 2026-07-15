@@ -5,7 +5,6 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, CalendarDays, Clock3, MapPin } from "lucide-react";
 import { TempleEvent } from "@/types/event";
-import { eventService } from "@/services/event.service";
 
 export default function EventDetailPage() {
   const params = useParams();
@@ -17,8 +16,14 @@ export default function EventDetailPage() {
     async function loadEvent() {
       try {
         const id = params.id as string;
-        const data = await eventService.getEvent(id);
-        setEvent(data);
+        const response = await fetch(`/api/events/${id}`);
+        const result = await response.json();
+        
+        if (result.success && result.data) {
+          setEvent(result.data);
+        } else {
+          setError("Event not found");
+        }
       } catch {
         setError("Event not found");
       } finally {

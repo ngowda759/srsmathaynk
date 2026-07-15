@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 
+import AdminPageHeader from "@/components/admin/common/AdminPageHeader";
 import EventForm from "@/components/admin/events/EventForm";
 import { eventService } from "@/services/event.service";
 
@@ -21,16 +22,11 @@ export default async function EditEventPage({
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">
-          Edit Event
-        </h1>
-
-        <p className="text-stone-500">
-          Update temple event information.
-        </p>
-      </div>
+    <div className="space-y-8">
+      <AdminPageHeader
+        title="Edit Event"
+        description="Update temple event information."
+      />
 
       <EventForm
         mode="edit"

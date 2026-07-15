@@ -3,12 +3,6 @@
 import { useEffect, useState } from "react";
 import AdminPageHeader from "@/components/admin/common/AdminPageHeader";
 import AdminAssistant from "@/components/admin/common/AdminAssistant";
-import { eventService } from "@/services/event.service";
-import { galleryService } from "@/services/gallery.service";
-import { poojaService } from "@/services/pooja.service";
-import { sevaService } from "@/services/seva.service";
-import { sevaBookingService } from "@/services/sevaBooking.service";
-import { aaradhaneService } from "@/services/aaradhane.service";
 
 type Recommendation = {
   title: string;
@@ -37,61 +31,23 @@ export default function AdminAssistantPage() {
   useEffect(() => {
     async function loadData() {
       try {
-        const [events, images, poojas, sevas, bookings, aaradhanes] = await Promise.all([
-          eventService.getEvents().catch(() => []),
-          galleryService.getImages().catch(() => []),
-          poojaService.getPoojas().catch(() => []),
-          sevaService.getAllSevas().catch(() => []),
-          sevaBookingService.getAllBookings().catch(() => []),
-          aaradhaneService.getAaradhanes().catch(() => []),
-        ]);
+        // Fetch events from API
+        const eventsResponse = await fetch("/api/events");
+        const eventsResult = await eventsResponse.json();
+        const events = eventsResult.success ? eventsResult.data : [];
+        
+        // Fetch stats from API
+        const statsResponse = await fetch("/api/events/stats");
+        const statsResult = await statsResponse.json();
+        const stats = statsResult.success ? statsResult.data : { total: 0, upcoming: 0 };
 
-        setTotalEvents(events.length);
-        setUpcomingEvents(
-          events.filter((event) => event.status === "Upcoming").length
-        );
-
-        const featuredCount = images.filter((image: any) => image.isFeatured).length;
-        setTotalImages(images.length);
-        setFeaturedImages(featuredCount);
-
-        setTotalPoojas(poojas.length);
-        setActivePoojas(poojas.filter((pooja: any) => pooja.isActive).length);
-
-        setTotalSevas(sevas.length);
-        setActiveSevas(sevas.filter((seva: any) => seva.active).length);
-
-        setTotalBookings(bookings.length);
-        setPendingBookings(bookings.filter((b: any) => b.status === "pending").length);
-        setCompletedBookings(bookings.filter((b: any) => b.status === "completed" || b.status === "confirmed").length);
-
-        setTotalAaradhanes(aaradhanes.length);
-        setUpcomingAaradhanes(aaradhanes.filter((a: any) => a.isUpcoming).length);
+        setTotalEvents(stats.total);
+        setUpcomingEvents(stats.upcoming);
 
         const recs: Recommendation[] = [];
 
-        // Aaradhane recommendations
-        if (aaradhanes.length === 0) {
-          recs.push({
-            title: "Add Aaradhane events",
-            description: "No aaradhana configured. Add events for devotees.",
-            href: "/admin/aaradhane",
-            action: "Add Aaradhane",
-          });
-        }
-
-        // Gallery recommendations
-        if (images.length > 0 && featuredCount / images.length < 0.15) {
-          recs.push({
-            title: "Feature more gallery images",
-            description: "Less than 15% of gallery items are marked as featured.",
-            href: "/admin/gallery",
-            action: "Review Gallery",
-          });
-        }
-
         // Event recommendations
-        if (events.some((event: any) => event.status === "Upcoming" && !event.location)) {
+        if (events.some((event: any) => event.status === "UPCOMING" && !event.location)) {
           recs.push({
             title: "Complete upcoming event details",
             description: "Some upcoming events are missing location information.",
@@ -100,37 +56,7 @@ export default function AdminAssistantPage() {
           });
         }
 
-        // Pooja recommendations
-        if (poojas.some((pooja: any) => !pooja.notes)) {
-          recs.push({
-            title: "Add more pooja details",
-            description: "Several pooja schedules do not include notes.",
-            href: "/admin/pooja",
-            action: "Review Poojas",
-          });
-        }
-
-        // Booking recommendations
-        const pendingCount = bookings.filter((b: any) => b.status === "pending").length;
-        if (pendingCount > 5) {
-          recs.push({
-            title: "Review pending seva bookings",
-            description: `You have ${pendingCount} pending booking requests to review.`,
-            href: "/admin/bookings",
-            action: "Review Bookings",
-          });
-        }
-
-        // Seva recommendations
-        if (sevas.length === 0) {
-          recs.push({
-            title: "Add special sevas",
-            description: "No sevas configured. Add some for devotees to book.",
-            href: "/admin/sevas",
-            action: "Add Sevas",
-          });
-        }
-
+        // Placeholder recommendations for other modules (to be implemented)
         if (recs.length === 0) {
           recs.push({
             title: "All systems look healthy",
@@ -143,6 +69,14 @@ export default function AdminAssistantPage() {
         setRecommendations(recs);
       } catch (error) {
         console.error("Error loading assistant data:", error);
+        setRecommendations([
+          {
+            title: "Unable to load recommendations",
+            description: "Please check your connection and try again.",
+            href: "/admin",
+            action: "Go to Dashboard",
+          },
+        ]);
       } finally {
         setLoading(false);
       }

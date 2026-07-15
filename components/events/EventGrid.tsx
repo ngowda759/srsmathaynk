@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { TempleEvent } from "@/types/event";
-import { eventService } from "@/services/event.service";
 import EventCard from "./EventCard";
 import { ChevronDown } from "lucide-react";
 
@@ -29,11 +28,18 @@ export default function EventGrid({ limit }: Props) {
   useEffect(() => {
     async function load() {
       try {
-        const data = limit
-          ? await eventService.getUpcomingEvents(limit)
-          : await eventService.getPublishedEvents();
-
-        setEvents(data);
+        // Call API instead of direct service import
+        const params = new URLSearchParams({ published: "true" });
+        if (limit) {
+          params.set("limit", limit.toString());
+        }
+        
+        const response = await fetch(`/api/events?${params.toString()}`);
+        const result = await response.json();
+        
+        if (result.success && result.data) {
+          setEvents(result.data);
+        }
       } finally {
         setLoading(false);
       }
