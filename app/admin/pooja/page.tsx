@@ -1,32 +1,25 @@
-"use client";
-import { useEffect, useState, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import PoojaTable from "@/components/admin/pooja/PoojaTable";
 import PoojaStats from "@/components/admin/pooja/PoojaStats";
-import SearchBox from "@/components/admin/common/SearchBox";
+import PoojaPageClient from "./PoojaPageClient";
+import { Button } from "@/components/ui/button";
 import { DailyPooja } from "@/types/pooja";
-import { poojaService } from "@/services/pooja.service";
-export default function PoojaPage() {
-  const router = useRouter();
-  const [poojas, setPoojas] = useState<DailyPooja[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
-  const loadPoojas = useCallback(async () => {
-    try {
-      setLoading(true);
-      const data = await poojaService.getPoojas();
-      setPoojas(data);
-    } catch (error) {
-      console.error("Failed to load poojas:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
 
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    loadPoojas();
-  }, []);
+export const dynamic = "force-dynamic";
+
+async function getPoojas(): Promise<DailyPooja[]> {
+  const { poojaService } = await import("@/services/pooja.service");
+  return poojaService.getPoojas();
+}
+
+interface PoojaPageProps {
+  searchParams: Promise<{ search?: string }>;
+}
+
+export default async function PoojaPage({ searchParams }: PoojaPageProps) {
+  const params = await searchParams;
+  const search = params.search || "";
+  const poojas = await getPoojas();
 
   const filteredPoojas = poojas.filter((pooja) => {
     const keyword = search.toLowerCase();
@@ -37,6 +30,7 @@ export default function PoojaPage() {
       pooja.notes.toLowerCase().includes(keyword)
     );
   });
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -44,28 +38,12 @@ export default function PoojaPage() {
           <h1 className="text-xl font-semibold tracking-tight">Daily Pooja Management</h1>
           <p className="text-sm text-muted-foreground">Manage temple daily pooja schedule, timings, and seva amounts.</p>
         </div>
-        <button
-          onClick={() => router.push("/admin/pooja/create")}
-          className="inline-flex items-center justify-center font-medium transition bg-orange-600 hover:bg-orange-700 text-white h-11 rounded-lg px-4 py-3 cursor-pointer"
-        >
-          Add Pooja
-        </button>
+        <Button asChild className="bg-orange-600 hover:bg-orange-700">
+          <Link href="/admin/pooja/create">Add Pooja</Link>
+        </Button>
       </div>
       <PoojaStats />
-      <div className="flex items-center justify-between gap-4">
-        <SearchBox
-          value={search}
-          onChange={setSearch}
-          placeholder="Search by title, category, or notes..."
-        />
-      </div>
-      {loading ? (
-        <div className="flex h-64 items-center justify-center">
-          <p className="text-muted-foreground">Loading poojas...</p>
-        </div>
-      ) : (
-        <PoojaTable poojas={filteredPoojas} onRefresh={loadPoojas} />
-      )}
+      <PoojaPageClient poojas={filteredPoojas} />
     </div>
   );
 }

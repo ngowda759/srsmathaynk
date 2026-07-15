@@ -5,15 +5,23 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { galleryService } from "@/services/gallery.service";
 import { GalleryCategoryRequest } from "@/types/gallery";
+
+
+export const dynamic = "force-dynamic";
+
+// Lazy load service to prevent Prisma initialization at build time
+async function getgalleryService() {
+  const { galleryService } = await import("@/services/gallery.service");
+  return galleryService;
+}
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const activeOnly = searchParams.get("activeOnly") !== "false";
 
-    const categories = await galleryService.getCategories(activeOnly);
+    const categories = await (await getgalleryService()).getCategories(activeOnly);
 
     return NextResponse.json({
       success: true,
@@ -41,7 +49,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const category = await galleryService.createCategory(body);
+    const category = await (await getgalleryService()).createCategory(body);
 
     return NextResponse.json(
       { success: true, data: category, message: "Category created successfully" },

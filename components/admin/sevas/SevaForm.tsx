@@ -34,11 +34,9 @@ export default function SevaForm({
     name: initialValues?.name ?? "",
     description: initialValues?.description ?? "",
     category: initialValues?.category ?? "",
-    amount: initialValues?.amount ?? 0,
-    duration: 0,
-    imageUrl: initialValues?.imageUrl ?? "",
+    price: Number(initialValues?.price) || 0,
+    duration: "0",
     active: initialValues?.active ?? true,
-    displayOrder: initialValues?.displayOrder ?? 0,
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -71,7 +69,7 @@ export default function SevaForm({
       validationErrors.category = "Category is required.";
     }
 
-    if (formData.amount <= 0) {
+    if (!formData.price || formData.price <= 0) {
       validationErrors.amount = "Amount must be greater than zero.";
     }
 
@@ -131,19 +129,19 @@ export default function SevaForm({
         <div className="grid gap-6 md:grid-cols-2">
           <FormNumberField
             label="Amount (₹)"
-            value={formData.amount}
+            value={formData.price}
             required
-            error={errors.amount}
+            error={errors.price}
             onChange={(e) =>
-              updateField("amount", Number(e.target.value))
+              updateField("price", Number(e.target.value))
             }
           />
 
           <FormNumberField
             label="Display Order"
-            value={formData.displayOrder}
+            value={formData.order}
             onChange={(e) =>
-              updateField("displayOrder", Number(e.target.value))
+              updateField("order", Number(e.target.value))
             }
           />
         </div>
@@ -155,14 +153,14 @@ export default function SevaForm({
       >
         <FormTextField
           label="Image URL"
-          value={formData.imageUrl}
-          onChange={(e) => updateField("imageUrl", e.target.value)}
+          value={formData.imageId}
+          onChange={(e) => updateField("imageId", e.target.value)}
         />
 
         <FormSwitchField
           label="Status"
-          checked={formData.active}
-          onChange={(checked) => updateField("active", checked)}
+          checked={formData.featured ?? false}
+          onChange={(checked) => updateField("featured", checked)}
         />
       </FormSection>
 

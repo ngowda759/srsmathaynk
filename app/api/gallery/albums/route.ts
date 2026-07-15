@@ -5,8 +5,16 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { galleryService } from "@/services/gallery.service";
 import { GalleryAlbumQuery, GalleryAlbumRequest } from "@/types/gallery";
+
+
+export const dynamic = "force-dynamic";
+
+// Lazy load service to prevent Prisma initialization at build time
+async function getgalleryService() {
+  const { galleryService } = await import("@/services/gallery.service");
+  return galleryService;
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -49,7 +57,7 @@ export async function GET(request: NextRequest) {
       query.sortOrder = searchParams.get("sortOrder") as "asc" | "desc";
     }
 
-    const albums = await galleryService.getAlbums(query);
+    const albums = await (await getgalleryService()).getAlbums(query);
 
     return NextResponse.json({
       success: true,
@@ -77,7 +85,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const album = await galleryService.createAlbum(body);
+    const album = await (await getgalleryService()).createAlbum(body);
 
     return NextResponse.json(
       { success: true, data: album, message: "Album created successfully" },

@@ -1,51 +1,51 @@
-"use client";
-
-import { useState, useEffect } from "react";
 import Link from "next/link";
-import { 
-  MessageSquare, 
-  Star, 
-  Users, 
-  BarChart3, 
+import {
+  MessageSquare,
+  Star,
+  Users,
+  BarChart3,
   Settings,
   ArrowRight,
   Clock,
   Brain
 } from "lucide-react";
-import { getPendingTestimonials } from "@/services/chat.service";
-import { getVolunteerRequests } from "@/services/chat.service";
 
-export default function AdminAIPage() {
-  const [stats, setStats] = useState({
-    pendingTestimonials: 0,
-    pendingVolunteers: 0,
-    totalConversations: 0,
-    recentMessages: 0,
-  });
-  const [loading, setLoading] = useState(true);
+export const dynamic = "force-dynamic";
 
-  useEffect(() => {
-    async function loadStats() {
-      try {
-        const [testimonials, volunteers] = await Promise.all([
-          getPendingTestimonials(),
-          getVolunteerRequests(),
-        ]);
+interface Stats {
+  pendingTestimonials: number;
+  pendingVolunteers: number;
+  totalConversations: number;
+  recentMessages: number;
+}
 
-        setStats({
-          pendingTestimonials: testimonials.length,
-          pendingVolunteers: volunteers.filter(v => v.status === "pending").length,
-          totalConversations: 0, // Will be fetched from analytics
-          recentMessages: 0,
-        });
-      } catch (error) {
-        console.error("Failed to load stats:", error);
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadStats();
-  }, []);
+async function getStats(): Promise<Stats> {
+  try {
+    const { getPendingTestimonials, getVolunteerRequests } = await import("@/services/chat.service");
+    const [testimonials, volunteers] = await Promise.all([
+      getPendingTestimonials(),
+      getVolunteerRequests(),
+    ]);
+
+    return {
+      pendingTestimonials: testimonials.length,
+      pendingVolunteers: volunteers.filter(v => v.status === "pending").length,
+      totalConversations: 0,
+      recentMessages: 0,
+    };
+  } catch (error) {
+    console.error("Failed to load stats:", error);
+    return {
+      pendingTestimonials: 0,
+      pendingVolunteers: 0,
+      totalConversations: 0,
+      recentMessages: 0,
+    };
+  }
+}
+
+export default async function AdminAIPage() {
+  const stats = await getStats();
 
   const menuItems = [
     {
@@ -89,14 +89,6 @@ export default function AdminAIPage() {
       color: "bg-purple-500",
     },
   ];
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-96">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-600" />
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">

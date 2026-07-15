@@ -4,12 +4,20 @@
  */
 
 import { NextResponse } from "next/server";
-import { eventService } from "@/services/event.service";
+
+
+export const dynamic = "force-dynamic";
+
+// Lazy load service to prevent Prisma initialization at build time
+async function geteventService() {
+  const { eventService } = await import("@/services/event.service");
+  return eventService;
+}
 
 // GET /api/events/stats - Get event statistics
 export async function GET() {
   try {
-    const stats = await eventService.getStats();
+    const stats = await (await geteventService()).getStats();
 
     return NextResponse.json({
       success: true,
