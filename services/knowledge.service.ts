@@ -1,6 +1,8 @@
 /**
  * Knowledge Service - Sprint 4.7
  * Temple Knowledge Base - Foundation for Raya AI
+ * 
+ * Maps to KnowledgeArticle (FAQ model) with question/answer fields
  */
 
 import { prisma } from "@/lib/db";
@@ -22,28 +24,60 @@ function generateSlug(text: string): string {
     .replace(/^-|-$/g, "");
 }
 
+// Map internal model to API format
+function mapArticle(article: {
+  id: string;
+  question: string;
+  questionKn: string | null;
+  answer: string;
+  answerKn: string | null;
+  keywords: string[];
+  priority: number;
+  active: boolean;
+  viewCount: number;
+  createdAt: Date;
+  updatedAt: Date;
+  category?: { id: string; name: string; slug: string; nameKn: string | null } | null;
+  articleTags?: { tag: { id: string; name: string; slug: string; createdAt: Date } }[];
+}): KnowledgeArticleRecord {
+  return {
+    id: article.id,
+    title: article.question,
+    titleKn: article.questionKn,
+    slug: article.id,
+    content: article.answer,
+    contentKn: article.answerKn,
+    excerpt: article.keywords.join(", "),
+    excerptKn: null,
+    categoryId: article.category?.id || "",
+    authorId: null,
+    featured: article.priority > 0,
+    published: article.active,
+    viewCount: article.viewCount,
+    createdAt: article.createdAt,
+    updatedAt: article.updatedAt,
+    category: article.category as KnowledgeCategoryRecord | null,
+    tags: article.articleTags?.map((t) => t.tag) as KnowledgeTagRecord[] || [],
+  };
+}
+
 export const knowledgeService = {
-  // ============ ARTICLES ============
+  // ============ ARTICLES (FAQs) ============
 
   async createArticle(data: KnowledgeArticleRequest): Promise<string> {
     const article = await prisma.knowledgeArticle.create({
       data: {
-        title: data.title,
-        titleKn: data.titleKn,
-        slug: data.slug || generateSlug(data.title),
-        content: data.content,
-        contentKn: data.contentKn,
-        excerpt: data.excerpt,
-        excerptKn: data.excerptKn,
+        question: data.title,
+        questionKn: data.titleKn,
+        answer: data.content,
+        answerKn: data.contentKn,
+        keywords: data.excerpt ? [data.excerpt] : [],
         categoryId: data.categoryId,
-        authorId: data.authorId,
-        featured: data.featured ?? false,
-        published: data.published ?? false,
-        viewCount: 0,
+        priority: data.featured ? 1 : 0,
+        active: data.published ?? true,
       },
     });
 
-    // Add tags
     if (data.tagIds && data.tagIds.length > 0) {
       await prisma.articleTag.createMany({
         data: data.tagIds.map((tagId) => ({
@@ -58,8 +92,7 @@ export const knowledgeService = {
 
   async getArticles(options?: {
     categoryId?: string;
-    published?: boolean;
-    featured?: boolean;
+    active?: boolean;
     search?: string;
     limit?: number;
   }): Promise<{ articles: KnowledgeArticleRecord[]; total: number }> {
@@ -68,17 +101,14 @@ export const knowledgeService = {
     if (options?.categoryId) {
       where.categoryId = options.categoryId;
     }
-    if (options?.published !== undefined) {
-      where.published = options.published;
-    }
-    if (options?.featured !== undefined) {
-      where.featured = options.featured;
+    if (options?.active !== undefined) {
+      where.active = options.active;
     }
     if (options?.search) {
       where.OR = [
-        { title: { contains: options.search, mode: "insensitive" } },
-        { content: { contains: options.search, mode: "insensitive" } },
-        { excerpt: { contains: options.search, mode: "insensitive" } },
+        { question: { contains: options.search, mode: "insensitive" } },
+        { questionKn: { contains: options.search, mode: "insensitive" } },
+        { answer: { contains: options.search, mode: "insensitive" } },
       ];
     }
 
@@ -87,20 +117,16 @@ export const knowledgeService = {
         where,
         include: {
           category: true,
-          author: { select: { id: true, name: true } },
-          tags: { include: { tag: true } },
+          articleTags: { include: { tag: true } },
         },
-        orderBy: [{ featured: "desc" }, { viewCount: "desc" }, { createdAt: "desc" }],
+        orderBy: [{ priority: "desc" }, { viewCount: "desc" }, { createdAt: "desc" }],
         take: options?.limit,
       }),
       prisma.knowledgeArticle.count({ where }),
     ]);
 
     return {
-      articles: articles.map((a) => ({
-        ...a,
-        tags: a.tags.map((t) => t.tag),
-      })) as unknown as KnowledgeArticleRecord[],
+      articles: articles.map(mapArticle),
       total,
     };
   },
@@ -110,63 +136,38 @@ export const knowledgeService = {
       where: { id },
       include: {
         category: true,
-        author: { select: { id: true, name: true } },
-        tags: { include: { tag: true } },
+        articleTags: { include: { tag: true } },
         attachments: true,
       },
     });
 
     if (!article) return null;
 
-    return {
-      ...article,
-      tags: article.tags.map((t) => t.tag),
-    } as unknown as KnowledgeArticleRecord;
-  },
-
-  async getArticleBySlug(slug: string): Promise<KnowledgeArticleRecord | null> {
-    const article = await prisma.knowledgeArticle.findUnique({
-      where: { slug },
-      include: {
-        category: true,
-        author: { select: { id: true, name: true } },
-        tags: { include: { tag: true } },
-        attachments: true,
-      },
-    });
-
-    if (!article) return null;
-
-    // Increment view count
     await prisma.knowledgeArticle.update({
       where: { id: article.id },
       data: { viewCount: { increment: 1 } },
     });
 
-    return {
-      ...article,
-      tags: article.tags.map((t) => t.tag),
-    } as unknown as KnowledgeArticleRecord;
+    return mapArticle(article);
   },
 
   async updateArticle(id: string, data: Partial<KnowledgeArticleRequest>): Promise<void> {
+    const updateData: Record<string, unknown> = {};
+
+    if (data.title) updateData.question = data.title;
+    if (data.titleKn !== undefined) updateData.questionKn = data.titleKn;
+    if (data.content !== undefined) updateData.answer = data.content;
+    if (data.contentKn !== undefined) updateData.answerKn = data.contentKn;
+    if (data.excerpt) updateData.keywords = [data.excerpt];
+    if (data.categoryId) updateData.categoryId = data.categoryId;
+    if (data.featured !== undefined) updateData.priority = data.featured ? 1 : 0;
+    if (data.published !== undefined) updateData.active = data.published;
+
     await prisma.knowledgeArticle.update({
       where: { id },
-      data: {
-        ...(data.title && { title: data.title }),
-        ...(data.titleKn !== undefined && { titleKn: data.titleKn }),
-        ...(data.slug && { slug: data.slug }),
-        ...(data.content !== undefined && { content: data.content }),
-        ...(data.contentKn !== undefined && { contentKn: data.contentKn }),
-        ...(data.excerpt !== undefined && { excerpt: data.excerpt }),
-        ...(data.excerptKn !== undefined && { excerptKn: data.excerptKn }),
-        ...(data.categoryId && { categoryId: data.categoryId }),
-        ...(data.featured !== undefined && { featured: data.featured }),
-        ...(data.published !== undefined && { published: data.published }),
-      },
+      data: updateData,
     });
 
-    // Update tags if provided
     if (data.tagIds !== undefined) {
       await prisma.articleTag.deleteMany({ where: { articleId: id } });
       if (data.tagIds.length > 0) {
@@ -184,21 +185,23 @@ export const knowledgeService = {
   async toggleFeatured(id: string): Promise<boolean> {
     const article = await prisma.knowledgeArticle.findUnique({ where: { id } });
     if (!article) throw new Error("Article not found");
+    const newFeatured = article.priority === 0;
     await prisma.knowledgeArticle.update({
       where: { id },
-      data: { featured: !article.featured },
+      data: { priority: newFeatured ? 1 : 0 },
     });
-    return !article.featured;
+    return newFeatured;
   },
 
   async togglePublished(id: string): Promise<boolean> {
     const article = await prisma.knowledgeArticle.findUnique({ where: { id } });
     if (!article) throw new Error("Article not found");
+    const newActive = !article.active;
     await prisma.knowledgeArticle.update({
       where: { id },
-      data: { published: !article.published },
+      data: { active: newActive },
     });
-    return !article.published;
+    return newActive;
   },
 
   // ============ CATEGORIES ============
@@ -223,7 +226,6 @@ export const knowledgeService = {
     active?: boolean;
   }): Promise<{ categories: KnowledgeCategoryRecord[]; total: number }> {
     const where: Record<string, unknown> = {};
-
     if (options?.active !== undefined) {
       where.active = options.active;
     }
@@ -231,9 +233,7 @@ export const knowledgeService = {
     const [categories, total] = await Promise.all([
       prisma.knowledgeCategory.findMany({
         where,
-        include: {
-          _count: { select: { articles: true } },
-        },
+        include: { _count: { select: { articles: true } } },
         orderBy: { order: "asc" },
       }),
       prisma.knowledgeCategory.count({ where }),
@@ -241,8 +241,18 @@ export const knowledgeService = {
 
     return {
       categories: categories.map((c) => ({
-        ...c,
+        id: c.id,
+        name: c.name,
+        nameKn: c.nameKn,
+        slug: c.slug,
+        description: c.description,
+        icon: c.icon,
+        color: c.color,
+        order: c.order,
+        active: c.active,
         articleCount: c._count.articles,
+        createdAt: c.createdAt,
+        updatedAt: c.updatedAt,
       })) as unknown as KnowledgeCategoryRecord[],
       total,
     };
@@ -253,12 +263,20 @@ export const knowledgeService = {
       where: { id },
       include: { _count: { select: { articles: true } } },
     });
-
     if (!category) return null;
-
     return {
-      ...category,
+      id: category.id,
+      name: category.name,
+      nameKn: category.nameKn,
+      slug: category.slug,
+      description: category.description,
+      icon: category.icon,
+      color: category.color,
+      order: category.order,
+      active: category.active,
       articleCount: category._count.articles,
+      createdAt: category.createdAt,
+      updatedAt: category.updatedAt,
     } as unknown as KnowledgeCategoryRecord;
   },
 
@@ -267,12 +285,20 @@ export const knowledgeService = {
       where: { slug },
       include: { _count: { select: { articles: true } } },
     });
-
     if (!category) return null;
-
     return {
-      ...category,
+      id: category.id,
+      name: category.name,
+      nameKn: category.nameKn,
+      slug: category.slug,
+      description: category.description,
+      icon: category.icon,
+      color: category.color,
+      order: category.order,
+      active: category.active,
       articleCount: category._count.articles,
+      createdAt: category.createdAt,
+      updatedAt: category.updatedAt,
     } as unknown as KnowledgeCategoryRecord;
   },
 
@@ -312,7 +338,12 @@ export const knowledgeService = {
     const tags = await prisma.knowledgeTag.findMany({
       orderBy: { name: "asc" },
     });
-    return tags as unknown as KnowledgeTagRecord[];
+    return tags.map((t) => ({
+      id: t.id,
+      name: t.name,
+      slug: t.slug,
+      createdAt: t.createdAt,
+    })) as unknown as KnowledgeTagRecord[];
   },
 
   async getOrCreateTag(name: string): Promise<string> {
@@ -327,27 +358,23 @@ export const knowledgeService = {
   async search(query: string, limit = 20): Promise<KnowledgeSearchResult> {
     const articles = await prisma.knowledgeArticle.findMany({
       where: {
-        published: true,
+        active: true,
         OR: [
-          { title: { contains: query, mode: "insensitive" } },
-          { titleKn: { contains: query, mode: "insensitive" } },
-          { content: { contains: query, mode: "insensitive" } },
-          { excerpt: { contains: query, mode: "insensitive" } },
+          { question: { contains: query, mode: "insensitive" } },
+          { questionKn: { contains: query, mode: "insensitive" } },
+          { answer: { contains: query, mode: "insensitive" } },
         ],
       },
       include: {
         category: true,
-        tags: { include: { tag: true } },
+        articleTags: { include: { tag: true } },
       },
-      orderBy: [{ featured: "desc" }, { viewCount: "desc" }],
+      orderBy: [{ priority: "desc" }, { viewCount: "desc" }],
       take: limit,
     });
 
     return {
-      articles: articles.map((a) => ({
-        ...a,
-        tags: a.tags.map((t) => t.tag),
-      })) as unknown as KnowledgeArticleRecord[],
+      articles: articles.map(mapArticle),
       total: articles.length,
       query,
     };
@@ -358,12 +385,12 @@ export const knowledgeService = {
   async getStatistics(): Promise<KnowledgeStats> {
     const [totalArticles, publishedArticles, totalCategories, totalTags, topArticles] = await Promise.all([
       prisma.knowledgeArticle.count(),
-      prisma.knowledgeArticle.count({ where: { published: true } }),
+      prisma.knowledgeArticle.count({ where: { active: true } }),
       prisma.knowledgeCategory.count(),
       prisma.knowledgeTag.count(),
       prisma.knowledgeArticle.findMany({
-        where: { published: true },
-        select: { id: true, title: true, viewCount: true },
+        where: { active: true },
+        select: { id: true, question: true, viewCount: true },
         orderBy: { viewCount: "desc" },
         take: 10,
       }),
@@ -379,7 +406,7 @@ export const knowledgeService = {
       totalViews,
       topArticles: topArticles.map((a) => ({
         id: a.id,
-        title: a.title,
+        title: a.question,
         viewCount: a.viewCount,
       })),
     };
