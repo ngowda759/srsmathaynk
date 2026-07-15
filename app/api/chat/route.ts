@@ -3,6 +3,8 @@ import { getAIProvider } from "@/lib/ai/provider";
 import { getSystemPrompt } from "@/lib/ai/settings";
 import { AIMessage, ChatRequest, ChatResponse } from "@/types/ai";
 
+
+export const dynamic = "force-dynamic";
 // Rate limiting (simple in-memory implementation)
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
 const RATE_LIMIT = 20; // requests per minute

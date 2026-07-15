@@ -2,7 +2,8 @@ import { notFound } from "next/navigation";
 
 import AdminPageHeader from "@/components/admin/common/AdminPageHeader";
 import EventForm from "@/components/admin/events/EventForm";
-import { eventService } from "@/services/event.service";
+
+export const dynamic = "force-dynamic";
 
 interface Props {
   params: Promise<{
@@ -15,6 +16,8 @@ export default async function EditEventPage({
 }: Props) {
   const { id } = await params;
 
+  // Lazy load to prevent Prisma initialization at build time
+  const { eventService } = await import("@/services/event.service");
   const event = await eventService.getEvent(id);
 
   if (!event) {

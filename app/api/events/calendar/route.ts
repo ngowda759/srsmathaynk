@@ -23,7 +23,15 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { eventService } from "@/services/event.service";
+
+
+export const dynamic = "force-dynamic";
+
+// Lazy load service to prevent Prisma initialization at build time
+async function geteventService() {
+  const { eventService } = await import("@/services/event.service");
+  return eventService;
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -88,7 +96,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const events = await eventService.getCalendarEvents(startDate, endDate);
+    const events = await (await geteventService()).getCalendarEvents(startDate, endDate);
 
     return NextResponse.json({
       success: true,
