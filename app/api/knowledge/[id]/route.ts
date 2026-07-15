@@ -142,7 +142,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
     const { id } = await params;
     const body = await request.json();
-    const { action } = body;
+    const { action, ...actionData } = body;
 
     const article = await knowledgeService.getArticleById(id);
     if (!article) {
@@ -169,6 +169,25 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
           success: true,
           data: { published: isPublished },
           message: isPublished ? "Article published" : "Article unpublished",
+        });
+
+      case "view":
+        // Track view (idempotent - already done in GET, but can be called explicitly)
+        await knowledgeService.incrementViewCount(id);
+        console.log(`[API] Article view recorded: ${id}`);
+        return NextResponse.json({
+          success: true,
+          message: "View recorded",
+        });
+
+      case "helpful":
+        // Record if user found article helpful
+        const helpful = actionData.helpful !== false;
+        await knowledgeService.recordHelpful(id, helpful);
+        console.log(`[API] Article feedback: ${id}, helpful: ${helpful}`);
+        return NextResponse.json({
+          success: true,
+          message: helpful ? "Thank you for your feedback!" : "Sorry this wasn't helpful",
         });
 
       default:

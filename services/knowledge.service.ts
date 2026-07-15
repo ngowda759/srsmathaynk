@@ -204,6 +204,27 @@ export const knowledgeService = {
     return newActive;
   },
 
+  async incrementViewCount(id: string): Promise<void> {
+    await prisma.knowledgeArticle.update({
+      where: { id },
+      data: { viewCount: { increment: 1 } },
+    });
+  },
+
+  async recordHelpful(id: string, helpful: boolean): Promise<void> {
+    if (helpful) {
+      await prisma.knowledgeArticle.update({
+        where: { id },
+        data: { helpfulCount: { increment: 1 } },
+      });
+    } else {
+      await prisma.knowledgeArticle.update({
+        where: { id },
+        data: { notHelpfulCount: { increment: 1 } },
+      });
+    }
+  },
+
   // ============ CATEGORIES ============
 
   async createCategory(data: KnowledgeCategoryRequest): Promise<string> {
@@ -377,6 +398,78 @@ export const knowledgeService = {
       articles: articles.map(mapArticle),
       total: articles.length,
       query,
+    };
+  },
+
+  // ============ ADVANCED SEARCH (For Raya AI) ============
+
+  async searchAdvanced(options: {
+    query?: string;
+    categoryId?: string;
+    tagIds?: string[];
+    keywords?: string[];
+    publishedOnly?: boolean;
+    limit?: number;
+    offset?: number;
+  }): Promise<KnowledgeSearchResult> {
+    const where: Record<string, unknown> = {};
+
+    // Published filter
+    if (options.publishedOnly !== false) {
+      where.active = true;
+    }
+
+    // Category filter
+    if (options.categoryId) {
+      where.categoryId = options.categoryId;
+    }
+
+    // Tag filter (requires articleTags join)
+    if (options.tagIds && options.tagIds.length > 0) {
+      where.articleTags = {
+        some: {
+          tagId: { in: options.tagIds },
+        },
+      };
+    }
+
+    // Text search with keywords
+    if (options.query || (options.keywords && options.keywords.length > 0)) {
+      const searchTerms = [
+        options.query,
+        ...(options.keywords || []),
+      ].filter(Boolean);
+
+      where.OR = searchTerms.flatMap((term) => [
+        { question: { contains: term as string, mode: "insensitive" } },
+        { questionKn: { contains: term as string, mode: "insensitive" } },
+        { answer: { contains: term as string, mode: "insensitive" } },
+        { keywords: { has: term } },
+      ]);
+    }
+
+    const [articles, total] = await Promise.all([
+      prisma.knowledgeArticle.findMany({
+        where,
+        include: {
+          category: true,
+          articleTags: { include: { tag: true } },
+        },
+        orderBy: [
+          { priority: "desc" }, // Featured first
+          { viewCount: "desc" }, // Most viewed
+          { createdAt: "desc" }, // Newest
+        ],
+        take: options.limit || 20,
+        skip: options.offset || 0,
+      }),
+      prisma.knowledgeArticle.count({ where }),
+    ]);
+
+    return {
+      articles: articles.map(mapArticle),
+      total,
+      query: options.query || "",
     };
   },
 
