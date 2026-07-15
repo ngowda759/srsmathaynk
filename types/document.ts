@@ -4,7 +4,7 @@ import type {
   Media,
 } from "@prisma/client";
 
-export type { Document, DocumentCategory, Media };
+export type { PrismaDocument as Document, PrismaDocumentCategory as DocumentCategory, Media };
 
 // Document record
 export interface DocumentRecord {
