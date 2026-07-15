@@ -101,7 +101,7 @@ export const sevaService = {
   },
 
   async updateSeva(id: string, data: Partial<SevaRequest>): Promise<void> {
-    const updateData: Prisma.SevaUpdateInput = {};
+    const updateData: Prisma.SevaUncheckedUpdateInput = {};
 
     if (data.name) updateData.name = data.name;
     if (data.nameKn !== undefined) updateData.nameKn = data.nameKn;
@@ -209,7 +209,7 @@ export const sevaService = {
   },
 
   async updateAaradhane(id: string, data: Partial<AaradhaneRequest>): Promise<void> {
-    const updateData: Prisma.AaradhaneUpdateInput = {};
+    const updateData: Prisma.AaradhaneUncheckedUpdateInput = {};
 
     if (data.title) updateData.title = data.title;
     if (data.titleKn !== undefined) updateData.titleKn = data.titleKn;
@@ -243,18 +243,19 @@ export const sevaService = {
       data: {
         profileId: data.profileId,
         bookingType: data.bookingType,
+        referenceNumber: `BK-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
         bookingDate: data.bookingDate,
         status: "CONFIRMED",
         notes: data.notes,
-        contactPhone: data.contactPhone,
-        contactEmail: data.contactEmail,
-        specialRequests: data.specialRequests,
+        guestPhone: data.contactPhone,
+        guestEmail: data.contactEmail,
+        // specialRequests mapped to adminNotes
+        adminNotes: data.specialRequests,
         items: {
           create: data.items.map((item) => ({
             sevaId: item.sevaId,
             aaradhaneId: item.aaradhaneId,
             itemName: item.itemName,
-            itemNameKn: item.itemNameKn,
             quantity: item.quantity,
             unitPrice: new Prisma.Decimal(item.unitPrice),
             totalPrice: new Prisma.Decimal(item.unitPrice * item.quantity),

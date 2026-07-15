@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const volunteers = await volunteerService.getAllVolunteers({ search: query });
+    const volunteers = await volunteerService.getAllVolunteers();
 
     console.log(`[API] Volunteer search: "${query}" returned ${volunteers.length} results`);
 
