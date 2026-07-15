@@ -13,12 +13,18 @@ import AdminPageHeader from "@/components/admin/common/AdminPageHeader";
 import ReportCard from "@/components/admin/reports/ReportCard";
 import AdminAuthGuard from "@/components/admin/layout/AdminAuthGuard";
 
-import { donationService } from "@/services/donation.service";
-import { sevaBookingService } from "@/services/sevaBooking.service";
+import { getDonations } from "@/lib/api/donations";
 import { DonationRecord } from "@/types/donation";
 import { SevaBooking } from "@/types/seva-booking";
 
 type DateRange = "today" | "week" | "month" | "quarter" | "year" | "custom";
+
+// Mock seva booking fetch - in production this should come from API
+async function fetchSevaBookings(): Promise<SevaBooking[]> {
+  const res = await fetch("/api/seva-bookings");
+  const json = await res.json();
+  return json.data || [];
+}
 
 function ReportsPageContent() {
   const [loading, setLoading] = useState(true);
@@ -27,7 +33,7 @@ function ReportsPageContent() {
   const [customEnd, setCustomEnd] = useState("");
   const [summary, setSummary] = useState({
     revenue: { donationRevenue: 0, sevaRevenue: 0, totalRevenue: 0 },
-    donations: { total: 0, received: 0, pending: 0, failed: 0 },
+    donations: { total: 0, completed: 0, pending: 0, failed: 0, refunded: 0, refundedAmount: 0 },
     bookings: { total: 0, confirmed: 0, completed: 0, pending: 0, cancelled: 0 },
   });
   const [recentDonations, setRecentDonations] = useState<DonationRecord[]>([]);
@@ -84,10 +90,12 @@ function ReportsPageContent() {
       try {
         const { startDate, endDate } = getDateRange();
 
-        const [donations, bookings] = await Promise.all([
-          donationService.getDonations(),
-          sevaBookingService.getAllBookings(),
+        const [donationsResult, bookings] = await Promise.all([
+          getDonations(),
+          fetchSevaBookings(),
         ]);
+
+        const donations = donationsResult.donations;
 
         // Filter by date range
         const filteredDonations = donations.filter((d: DonationRecord) => {
@@ -102,12 +110,15 @@ function ReportsPageContent() {
 
         // Calculate summary
         const donationRevenue = filteredDonations
-          .filter((d: DonationRecord) => d.status === "received")
-          .reduce((sum: number, d: DonationRecord) => sum + (d.amount || 0), 0);
+          .filter((d: DonationRecord) => d.status === "COMPLETED")
+          .reduce((sum: number, d: DonationRecord) => sum + Number(d.amount), 0);
 
         const sevaRevenue = filteredBookings
           .filter((b: SevaBooking) => b.status === "completed" || b.status === "confirmed")
-          .reduce((sum: number, b: SevaBooking) => sum + (b.sevaAmount || 0), 0);
+          .reduce((sum: number, b: SevaBooking) => sum + Number(b.sevaAmount), 0);
+
+        const refundedDonations = filteredDonations.filter((d: DonationRecord) => d.status === "REFUNDED");
+        const refundedAmount = refundedDonations.reduce((sum: number, d: DonationRecord) => sum + Number(d.amount), 0);
 
         setSummary({
           revenue: {
@@ -117,9 +128,11 @@ function ReportsPageContent() {
           },
           donations: {
             total: filteredDonations.length,
-            received: filteredDonations.filter((d: DonationRecord) => d.status === "received").length,
-            pending: filteredDonations.filter((d: DonationRecord) => d.status === "pending").length,
-            failed: filteredDonations.filter((d: DonationRecord) => d.status === "failed").length,
+            completed: filteredDonations.filter((d: DonationRecord) => d.status === "COMPLETED").length,
+            pending: filteredDonations.filter((d: DonationRecord) => d.status === "PENDING").length,
+            failed: filteredDonations.filter((d: DonationRecord) => d.status === "FAILED").length,
+            refunded: refundedDonations.length,
+            refundedAmount,
           },
           bookings: {
             total: filteredBookings.length,
@@ -243,8 +256,8 @@ function ReportsPageContent() {
 
               <div className="space-y-3">
                 <SummaryRow
-                  label="Received"
-                  value={summary.donations.received}
+                  label="Completed"
+                  value={summary.donations.completed}
                   color="green"
                 />
                 <SummaryRow
@@ -256,6 +269,11 @@ function ReportsPageContent() {
                   label="Failed"
                   value={summary.donations.failed}
                   color="red"
+                />
+                <SummaryRow
+                  label="Refunded"
+                  value={summary.donations.refunded}
+                  color="stone"
                 />
               </div>
             </div>
@@ -302,10 +320,10 @@ function ReportsPageContent() {
                     <div key={donation.id} className="flex items-center justify-between border-b py-2 last:border-none">
                       <div>
                         <p className="font-medium text-stone-900">{donation.donorName}</p>
-                        <p className="text-sm text-stone-500">{donation.purpose || "General"}</p>
+                        <p className="text-sm text-stone-500">{(donation as any).campaign?.title || "General"}</p>
                       </div>
                       <div className="text-right">
-                        <p className="font-semibold text-amber-600">₹{donation.amount?.toLocaleString()}</p>
+                        <p className="font-semibold text-amber-600">₹{Number(donation.amount).toLocaleString()}</p>
                         <StatusBadge status={donation.status} />
                       </div>
                     </div>
