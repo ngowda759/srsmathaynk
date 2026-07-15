@@ -177,6 +177,7 @@ class AlbumService {
         };
       }
 
+      // Enhanced search across multiple fields
       if (query?.search) {
         const search = query.search.trim();
         if (search) {
@@ -184,6 +185,14 @@ class AlbumService {
             { title: { contains: search, mode: "insensitive" } },
             { titleKn: { contains: search } },
             { description: { contains: search, mode: "insensitive" } },
+            { descriptionKn: { contains: search } },
+            { location: { contains: search, mode: "insensitive" } },
+            // Search in category name
+            { category: { name: { contains: search, mode: "insensitive" } } },
+            { category: { nameKn: { contains: search } } },
+            // Search in festival title
+            { festival: { title: { contains: search, mode: "insensitive" } } },
+            { festival: { titleKn: { contains: search } } },
           ];
         }
       }
@@ -200,7 +209,7 @@ class AlbumService {
         include: {
           coverImage: true,
           category: true,
-          festival: { select: { id: true, title: true, startDate: true } },
+          festival: { select: { id: true, title: true, titleKn: true, startDate: true } },
         },
         orderBy: { [sortBy]: sortOrder },
         skip,
@@ -297,10 +306,32 @@ class AlbumService {
     }
   }
 
+  /**
+   * Generate a unique slug from a base slug
+   */
+  private async generateUniqueSlug(baseSlug: string, excludeId?: string): Promise<string> {
+    let slug = baseSlug;
+    let counter = 1;
+    
+    while (true) {
+      const existing = await prisma.galleryAlbum.findFirst({
+        where: {
+          slug,
+          ...(excludeId ? { id: { not: excludeId } } : {}),
+        },
+      });
+      
+      if (!existing) return slug;
+      slug = `${baseSlug}-${counter}`;
+      counter++;
+    }
+  }
+
   async createAlbum(data: GalleryAlbumRequest, userId?: string): Promise<GalleryAlbumType> {
     try {
       // Generate slug from title if not provided
-      const slug = data.slug || data.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+      const baseSlug = data.slug || data.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+      const slug = await this.generateUniqueSlug(baseSlug);
 
       const album = await prisma.galleryAlbum.create({
         data: {
@@ -338,9 +369,21 @@ class AlbumService {
 
   async updateAlbum(id: string, data: Partial<GalleryAlbumRequest>, userId?: string): Promise<GalleryAlbumType> {
     try {
+      // Check if title changed and update slug
+      let newSlug: string | undefined;
+      if (data.title !== undefined) {
+        const existing = await prisma.galleryAlbum.findUnique({ where: { id } });
+        if (existing && existing.title !== data.title) {
+          // Title changed - generate new slug based on new title
+          const baseSlug = data.slug || data.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+          newSlug = await this.generateUniqueSlug(baseSlug, id);
+        }
+      }
+
       const updateData: Prisma.GalleryAlbumUpdateInput = {};
 
       if (data.title !== undefined) updateData.title = data.title;
+      if (newSlug !== undefined) updateData.slug = newSlug;
       if (data.titleKn !== undefined) updateData.titleKn = data.titleKn;
       if (data.description !== undefined) updateData.description = data.description;
       if (data.descriptionKn !== undefined) updateData.descriptionKn = data.descriptionKn;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
+import { useState, useEffect, use, useRef, TouchEvent } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -45,6 +45,10 @@ export default function AlbumDetailPage({ params }: PageProps) {
   const [loading, setLoading] = useState(true);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
+  
+  // Touch handling for mobile swipe
+  const touchStartX = useRef<number>(0);
+  const touchEndX = useRef<number>(0);
 
   useEffect(() => {
     async function loadAlbum() {
@@ -80,10 +84,12 @@ export default function AlbumDetailPage({ params }: PageProps) {
   const openLightbox = (index: number) => {
     setLightboxIndex(index);
     setLightboxOpen(true);
+    document.body.style.overflow = "hidden";
   };
 
   const closeLightbox = () => {
     setLightboxOpen(false);
+    document.body.style.overflow = "";
   };
 
   const nextImage = () => {
@@ -105,6 +111,31 @@ export default function AlbumDetailPage({ params }: PageProps) {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [lightboxOpen]);
+
+  // Handle swipe gestures
+  const handleTouchStart = (e: TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchMove = (e: TouchEvent) => {
+    touchEndX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = () => {
+    const swipeThreshold = 50;
+    const diff = touchStartX.current - touchEndX.current;
+    
+    if (Math.abs(diff) > swipeThreshold) {
+      if (diff > 0) {
+        nextImage();
+      } else {
+        prevImage();
+      }
+    }
+    
+    touchStartX.current = 0;
+    touchEndX.current = 0;
+  };
 
   if (loading) {
     return (
@@ -282,7 +313,12 @@ export default function AlbumDetailPage({ params }: PageProps) {
 
       {/* Lightbox */}
       {lightboxOpen && items[lightboxIndex] && (
-        <div className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center">
+        <div 
+          className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center"
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+        >
           <button
             onClick={closeLightbox}
             className="absolute top-4 right-4 text-white hover:text-gray-300 z-10"
@@ -292,14 +328,14 @@ export default function AlbumDetailPage({ params }: PageProps) {
           
           <button
             onClick={prevImage}
-            className="absolute left-4 text-white hover:text-gray-300 z-10"
+            className="absolute left-4 text-white hover:text-gray-300 z-10 hidden sm:block"
           >
             <ChevronLeft className="h-12 w-12" />
           </button>
           
           <button
             onClick={nextImage}
-            className="absolute right-4 text-white hover:text-gray-300 z-10"
+            className="absolute right-4 text-white hover:text-gray-300 z-10 hidden sm:block"
           >
             <ChevronRight className="h-12 w-12" />
           </button>
