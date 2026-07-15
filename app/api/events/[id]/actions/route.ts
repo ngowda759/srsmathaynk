@@ -5,7 +5,15 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { eventService } from "@/services/event.service";
+
+
+export const dynamic = "force-dynamic";
+
+// Lazy load service to prevent Prisma initialization at build time
+async function geteventService() {
+  const { eventService } = await import("@/services/event.service");
+  return eventService;
+}
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -22,7 +30,7 @@ export async function POST(request: NextRequest, { params }: Props) {
     const body: ActionBody = await request.json();
 
     // Check if event exists
-    const existingEvent = await eventService.getEvent(id);
+    const existingEvent = await (await geteventService()).getEvent(id);
 
     if (!existingEvent) {
       return NextResponse.json(
@@ -39,28 +47,28 @@ export async function POST(request: NextRequest, { params }: Props) {
 
     switch (body.action) {
       case "toggleFeatured":
-        result = await eventService.toggleFeatured(id);
+        result = await (await geteventService()).toggleFeatured(id);
         message = result.featured
           ? "Event marked as featured"
           : "Event removed from featured";
         break;
 
       case "togglePublished":
-        result = await eventService.togglePublished(id);
+        result = await (await geteventService()).togglePublished(id);
         message = result.published
           ? "Event published"
           : "Event unpublished";
         break;
 
       case "incrementAttendees":
-        await eventService.updateAttendeeCount(id, true);
-        result = await eventService.getEvent(id);
+        await (await geteventService()).updateAttendeeCount(id, true);
+        result = await (await geteventService()).getEvent(id);
         message = "Attendee count incremented";
         break;
 
       case "decrementAttendees":
-        await eventService.updateAttendeeCount(id, false);
-        result = await eventService.getEvent(id);
+        await (await geteventService()).updateAttendeeCount(id, false);
+        result = await (await geteventService()).getEvent(id);
         message = "Attendee count decremented";
         break;
 

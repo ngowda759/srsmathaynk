@@ -1,5 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { submitVolunteerRequest, getVolunteerRequests, updateVolunteerRequestStatus } from "@/services/chat.service";
+
+export const dynamic = "force-dynamic";
+
+// Lazy load functions to prevent Prisma initialization at build time
+async function getChatFunctions() {
+  const { submitVolunteerRequest, getVolunteerRequests } = await import("@/services/chat.service");
+  return { submitVolunteerRequest, getVolunteerRequests };
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -32,6 +39,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const { submitVolunteerRequest } = await getChatFunctions();
     const requestId = await submitVolunteerRequest({
       sessionId: sessionId || "",
       name: name.trim(),
@@ -57,6 +65,7 @@ export async function POST(request: NextRequest) {
 
 export async function GET() {
   try {
+    const { getVolunteerRequests } = await getChatFunctions();
     const requests = await getVolunteerRequests();
     return NextResponse.json({ requests });
   } catch (error) {

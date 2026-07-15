@@ -4,7 +4,15 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { galleryService } from "@/services/gallery.service";
+
+
+export const dynamic = "force-dynamic";
+
+// Lazy load service to prevent Prisma initialization at build time
+async function getgalleryService() {
+  const { galleryService } = await import("@/services/gallery.service");
+  return galleryService;
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -14,9 +22,9 @@ export async function GET(request: NextRequest) {
     let stats;
 
     if (albumId) {
-      stats = await galleryService.getAlbumStats(albumId);
+      stats = await (await getgalleryService()).getAlbumStats(albumId);
     } else {
-      stats = await galleryService.getStats();
+      stats = await (await getgalleryService()).getStats();
     }
 
     return NextResponse.json({

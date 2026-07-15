@@ -6,8 +6,16 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { eventService } from "@/services/event.service";
 import { EventRequest } from "@/types/event";
+
+
+export const dynamic = "force-dynamic";
+
+// Lazy load service to prevent Prisma initialization at build time
+async function geteventService() {
+  const { eventService } = await import("@/services/event.service");
+  return eventService;
+}
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -18,7 +26,7 @@ export async function GET(request: NextRequest, { params }: Props) {
   try {
     const { id } = await params;
 
-    const event = await eventService.getEvent(id);
+    const event = await (await geteventService()).getEvent(id);
 
     if (!event) {
       return NextResponse.json(
@@ -53,7 +61,7 @@ export async function PUT(request: NextRequest, { params }: Props) {
     const body: Partial<EventRequest> = await request.json();
 
     // Check if event exists
-    const existingEvent = await eventService.getEvent(id);
+    const existingEvent = await (await geteventService()).getEvent(id);
 
     if (!existingEvent) {
       return NextResponse.json(
@@ -95,7 +103,7 @@ export async function PUT(request: NextRequest, { params }: Props) {
       }
     }
 
-    const event = await eventService.updateEvent(id, body);
+    const event = await (await geteventService()).updateEvent(id, body);
 
     return NextResponse.json({
       success: true,
@@ -120,7 +128,7 @@ export async function DELETE(request: NextRequest, { params }: Props) {
     const { id } = await params;
 
     // Check if event exists
-    const existingEvent = await eventService.getEvent(id);
+    const existingEvent = await (await geteventService()).getEvent(id);
 
     if (!existingEvent) {
       return NextResponse.json(
@@ -132,7 +140,7 @@ export async function DELETE(request: NextRequest, { params }: Props) {
       );
     }
 
-    await eventService.deleteEvent(id);
+    await (await geteventService()).deleteEvent(id);
 
     return NextResponse.json({
       success: true,
