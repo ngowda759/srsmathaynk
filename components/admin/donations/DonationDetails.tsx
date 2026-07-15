@@ -7,7 +7,7 @@ import { ArrowLeft, Receipt, Download, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
 import Button from "@/components/ui/button";
 import { DonationRecord, donationStatusOptions } from "@/types/donation";
-import { donationService } from "@/services/donation.service";
+import { updateDonationStatus, deleteDonation } from "@/lib/api/donations";
 
 interface DonationDetailsProps {
   donation: DonationRecord;
@@ -17,9 +17,9 @@ export default function DonationDetails({ donation }: DonationDetailsProps) {
   const router = useRouter();
   const [deleting, setDeleting] = useState(false);
 
-  async function updateStatus(status: string) {
+  async function handleUpdateStatus(status: string) {
     try {
-      await donationService.updateDonationStatus(donation.id, status);
+      await updateDonationStatus(donation.id, status);
       toast.success("Donation updated.");
       window.location.reload();
     } catch {
@@ -46,13 +46,13 @@ export default function DonationDetails({ donation }: DonationDetailsProps) {
     }
   }
 
-  async function deleteDonation() {
+  async function handleDelete() {
     if (!window.confirm(`Delete this donation from ${donation.donorName}?`)) {
       return;
     }
     try {
       setDeleting(true);
-      await donationService.deleteDonation(donation.id);
+      await deleteDonation(donation.id);
       toast.success("Donation deleted.");
       router.push("/admin/donations");
     } catch {
@@ -175,21 +175,21 @@ Sri Raghavendra Swamy Mutt
                 </Button>
               )}
               {donation.status !== "COMPLETED" && (
-                <Button variant="outline" onClick={() => updateStatus("COMPLETED")}>
+                <Button variant="outline" onClick={() => handleUpdateStatus("COMPLETED")}>
                   Mark Completed
                 </Button>
               )}
               {donation.status !== "FAILED" && (
-                <Button variant="outline" onClick={() => updateStatus("FAILED")}>
+                <Button variant="outline" onClick={() => handleUpdateStatus("FAILED")}>
                   Mark Failed
                 </Button>
               )}
               {donation.status !== "REFUNDED" && (
-                <Button variant="outline" onClick={() => updateStatus("REFUNDED")}>
+                <Button variant="outline" onClick={() => handleUpdateStatus("REFUNDED")}>
                   Mark Refunded
                 </Button>
               )}
-              <Button variant="destructive" onClick={deleteDonation} disabled={deleting}>
+              <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
                 <Trash2 className="mr-2 h-4 w-4" />
                 {deleting ? "Deleting..." : "Delete"}
               </Button>

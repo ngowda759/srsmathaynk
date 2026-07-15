@@ -8,7 +8,7 @@ import AdminPageHeader from "@/components/admin/common/AdminPageHeader";
 import Button from "@/components/ui/button";
 import Input from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { donationService } from "@/services/donation.service";
+import { createCampaign } from "@/lib/api/donations";
 import { donationCategoryOptions, urgencyLevelOptions } from "@/types/donation";
 
 export default function NewCampaignPage() {
@@ -48,11 +48,11 @@ export default function NewCampaignPage() {
         urgencyLevel: formData.urgencyLevel as "LOW" | "NORMAL" | "HIGH" | "CRITICAL",
         active: formData.active,
         featured: formData.featured,
-        startDate: formData.startDate ? new Date(formData.startDate) : undefined,
-        endDate: formData.endDate ? new Date(formData.endDate) : undefined,
+        startDate: formData.startDate || undefined,
+        endDate: formData.endDate || undefined,
       };
 
-      const id = await donationService.createCampaign(campaignData);
+      const id = await createCampaign(campaignData);
       toast.success("Campaign created successfully!");
       router.push(`/admin/donations/campaigns/${id}`);
     } catch (error) {

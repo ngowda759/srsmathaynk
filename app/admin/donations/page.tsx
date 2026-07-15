@@ -8,7 +8,7 @@ import AdminPageHeader from "@/components/admin/common/AdminPageHeader";
 import SearchBox from "@/components/admin/common/SearchBox";
 import Button from "@/components/ui/button";
 import { donationColumns } from "./columns";
-import { donationService } from "@/services/donation.service";
+import { getDonations, updateDonationStatus, deleteDonation, getDonationStats } from "@/lib/api/donations";
 import { DonationRecord, DonationStats } from "@/types/donation";
 
 export default function DonationsPage() {
@@ -24,8 +24,8 @@ export default function DonationsPage() {
     try {
       setLoading(true);
       const [donationsResult, statsData] = await Promise.all([
-        donationService.getDonations(),
-        donationService.getStatistics(),
+        getDonations(),
+        getDonationStats(),
       ]);
       setDonations(donationsResult.donations);
       setStats(statsData);
@@ -59,7 +59,7 @@ export default function DonationsPage() {
 
   async function handleStatusUpdate(donation: DonationRecord, status: string) {
     try {
-      await donationService.updateDonationStatus(donation.id, status);
+      await updateDonationStatus(donation.id, status);
       toast.success("Donation updated.");
       await loadData();
     } catch (error) {
@@ -73,7 +73,7 @@ export default function DonationsPage() {
       return;
     }
     try {
-      await donationService.deleteDonation(donation.id);
+      await deleteDonation(donation.id);
       toast.success("Donation deleted.");
       await loadData();
     } catch (error) {

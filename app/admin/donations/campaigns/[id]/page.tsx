@@ -8,7 +8,7 @@ import AdminPageHeader from "@/components/admin/common/AdminPageHeader";
 import Button from "@/components/ui/button";
 import Input from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { donationService } from "@/services/donation.service";
+import { getCampaign, updateCampaign, deleteCampaign } from "@/lib/api/donations";
 import { DonationCampaignRecord, donationCategoryOptions, urgencyLevelOptions } from "@/types/donation";
 
 export default function EditCampaignPage() {
@@ -36,7 +36,7 @@ export default function EditCampaignPage() {
   const loadCampaign = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await donationService.getCampaignById(campaignId);
+      const data = await getCampaign(campaignId);
       if (!data) {
         toast.error("Campaign not found.");
         router.push("/admin/donations/campaigns");
@@ -78,7 +78,7 @@ export default function EditCampaignPage() {
 
     try {
       setSaving(true);
-      await donationService.updateCampaign(campaignId, {
+      await updateCampaign(campaignId, {
         title: formData.title,
         titleKn: formData.titleKn || undefined,
         description: formData.description || undefined,
@@ -88,8 +88,8 @@ export default function EditCampaignPage() {
         urgencyLevel: formData.urgencyLevel as "LOW" | "NORMAL" | "HIGH" | "CRITICAL",
         active: formData.active,
         featured: formData.featured,
-        startDate: formData.startDate ? new Date(formData.startDate) : undefined,
-        endDate: formData.endDate ? new Date(formData.endDate) : undefined,
+        startDate: formData.startDate || undefined,
+        endDate: formData.endDate || undefined,
       });
       toast.success("Campaign updated successfully!");
       await loadCampaign();
@@ -106,7 +106,7 @@ export default function EditCampaignPage() {
       return;
     }
     try {
-      await donationService.deleteCampaign(campaignId);
+      await deleteCampaign(campaignId);
       toast.success("Campaign deleted.");
       router.push("/admin/donations/campaigns");
     } catch (error) {

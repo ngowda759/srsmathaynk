@@ -6,7 +6,7 @@ import { Plus, Star, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
 import AdminPageHeader from "@/components/admin/common/AdminPageHeader";
 import Button from "@/components/ui/button";
-import { donationService } from "@/services/donation.service";
+import { getCampaigns, toggleFeaturedCampaign, toggleActiveCampaign, deleteCampaign } from "@/lib/api/donations";
 import { DonationCampaignRecord } from "@/types/donation";
 
 export default function CampaignsPage() {
@@ -17,7 +17,7 @@ export default function CampaignsPage() {
   const loadCampaigns = useCallback(async () => {
     try {
       setLoading(true);
-      const result = await donationService.getCampaigns();
+      const result = await getCampaigns();
       setCampaigns(result.campaigns);
     } catch (error) {
       console.error(error);
@@ -31,9 +31,9 @@ export default function CampaignsPage() {
     loadCampaigns();
   }, [loadCampaigns]);
 
-  async function toggleFeatured(campaign: DonationCampaignRecord) {
+  async function handleToggleFeatured(campaign: DonationCampaignRecord) {
     try {
-      await donationService.toggleFeaturedCampaign(campaign.id);
+      await toggleFeaturedCampaign(campaign.id);
       toast.success(`Campaign ${campaign.featured ? "unfeatured" : "featured"}.`);
       await loadCampaigns();
     } catch (error) {
@@ -42,9 +42,9 @@ export default function CampaignsPage() {
     }
   }
 
-  async function toggleActive(campaign: DonationCampaignRecord) {
+  async function handleToggleActive(campaign: DonationCampaignRecord) {
     try {
-      await donationService.toggleActiveCampaign(campaign.id);
+      await toggleActiveCampaign(campaign.id);
       toast.success(`Campaign ${campaign.active ? "deactivated" : "activated"}.`);
       await loadCampaigns();
     } catch (error) {
@@ -58,7 +58,7 @@ export default function CampaignsPage() {
       return;
     }
     try {
-      await donationService.deleteCampaign(campaign.id);
+      await deleteCampaign(campaign.id);
       toast.success("Campaign deleted.");
       await loadCampaigns();
     } catch (error) {
@@ -177,7 +177,7 @@ export default function CampaignsPage() {
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => toggleFeatured(campaign)}
+                      onClick={() => handleToggleFeatured(campaign)}
                     >
                       <Star
                         className={`h-4 w-4 ${

@@ -13,12 +13,18 @@ import AdminPageHeader from "@/components/admin/common/AdminPageHeader";
 import ReportCard from "@/components/admin/reports/ReportCard";
 import AdminAuthGuard from "@/components/admin/layout/AdminAuthGuard";
 
-import { donationService } from "@/services/donation.service";
-import { sevaBookingService } from "@/services/sevaBooking.service";
+import { getDonations } from "@/lib/api/donations";
 import { DonationRecord } from "@/types/donation";
 import { SevaBooking } from "@/types/seva-booking";
 
 type DateRange = "today" | "week" | "month" | "quarter" | "year" | "custom";
+
+// Mock seva booking fetch - in production this should come from API
+async function fetchSevaBookings(): Promise<SevaBooking[]> {
+  const res = await fetch("/api/seva-bookings");
+  const json = await res.json();
+  return json.data || [];
+}
 
 function ReportsPageContent() {
   const [loading, setLoading] = useState(true);
@@ -85,8 +91,8 @@ function ReportsPageContent() {
         const { startDate, endDate } = getDateRange();
 
         const [donationsResult, bookings] = await Promise.all([
-          donationService.getDonations(),
-          sevaBookingService.getAllBookings(),
+          getDonations(),
+          fetchSevaBookings(),
         ]);
 
         const donations = donationsResult.donations;

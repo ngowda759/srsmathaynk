@@ -5,7 +5,7 @@ import { ArrowLeft, Search, Download, Receipt } from "lucide-react";
 import AdminPageHeader from "@/components/admin/common/AdminPageHeader";
 import Button from "@/components/ui/button";
 import SearchBox from "@/components/admin/common/SearchBox";
-import { donationService } from "@/services/donation.service";
+import { getDonations } from "@/lib/api/donations";
 import { DonationRecord } from "@/types/donation";
 
 export default function ReceiptsPage() {
@@ -16,8 +16,8 @@ export default function ReceiptsPage() {
   const loadDonations = useCallback(async () => {
     try {
       setLoading(true);
-      const result = await donationService.getDonations({ status: "COMPLETED" });
-      setDonations(result.donations.filter((d) => d.receiptNumber));
+      const result = await getDonations({ status: "COMPLETED" });
+      setDonations(result.donations.filter((d: DonationRecord) => d.receiptNumber));
     } catch (error) {
       console.error(error);
     } finally {

@@ -8,7 +8,7 @@ import Button from "@/components/ui/button";
 import Input from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
-import { donationService } from "@/services/donation.service";
+import { createDonation } from "@/lib/api/donations";
 import { PaymentMethod } from "@/types/donation";
 import { useFinanceSettings } from "@/hooks/useFinanceSettings";
 
@@ -98,7 +98,7 @@ export default function DonationForm() {
       const ref = `DON-${Date.now().toString(36).toUpperCase()}`;
       setDonationRef(ref);
       
-      await donationService.createDonation({
+      await createDonation({
         donorName,
         donorEmail: email,
         donorPhone: phone,

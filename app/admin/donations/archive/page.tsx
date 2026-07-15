@@ -5,7 +5,7 @@ import { ArrowLeft, RotateCcw, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
 import AdminPageHeader from "@/components/admin/common/AdminPageHeader";
 import Button from "@/components/ui/button";
-import { donationService } from "@/services/donation.service";
+import { getArchivedDonations, permanentDeleteDonation } from "@/lib/api/donations";
 import { DonationRecord } from "@/types/donation";
 
 export default function ArchivePage() {
@@ -16,7 +16,7 @@ export default function ArchivePage() {
   const loadArchived = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await donationService.getArchivedDonations();
+      const data = await getArchivedDonations();
       setDonations(data);
     } catch (error) {
       console.error(error);
@@ -52,7 +52,7 @@ export default function ArchivePage() {
     }
     try {
       for (const id of ids) {
-        await donationService.permanentDeleteDonation(id);
+        await permanentDeleteDonation(id);
       }
       toast.success(`${ids.length} donation(s) permanently deleted.`);
       setSelectedIds(new Set());

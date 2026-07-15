@@ -4,7 +4,7 @@ import Link from "next/link";
 import { ArrowLeft, TrendingUp, Users, Calendar } from "lucide-react";
 import AdminPageHeader from "@/components/admin/common/AdminPageHeader";
 import Button from "@/components/ui/button";
-import { donationService } from "@/services/donation.service";
+import { getDonationStatistics } from "@/lib/api/donations";
 import { DonationStats } from "@/types/donation";
 
 export default function StatisticsPage() {
@@ -16,21 +16,21 @@ export default function StatisticsPage() {
     try {
       setLoading(true);
       const now = new Date();
-      let startDate: Date | undefined;
+      let startDate: string | undefined;
 
       switch (dateRange) {
         case "30days":
-          startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+          startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
           break;
         case "90days":
-          startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+          startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000).toISOString();
           break;
         case "year":
-          startDate = new Date(now.getFullYear(), 0, 1);
+          startDate = new Date(now.getFullYear(), 0, 1).toISOString();
           break;
       }
 
-      const data = await donationService.getStatistics({ startDate });
+      const data = await getDonationStatistics({ startDate });
       setStats(data);
     } catch (error) {
       console.error(error);
