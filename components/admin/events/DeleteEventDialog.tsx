@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 
-import { eventService } from "@/services/event.service";
 import { Button } from "@/components/ui/button";
 
 interface Props {
@@ -25,12 +25,19 @@ export default function DeleteEventDialog({
     try {
       setLoading(true);
 
-      await eventService.deleteEvent(id);
+      const response = await fetch(`/api/events/${id}`, {
+        method: "DELETE",
+      });
 
+      if (!response.ok) {
+        throw new Error("Failed to delete event");
+      }
+
+      toast.success("Event deleted successfully.");
       router.refresh();
     } catch (err) {
       console.error(err);
-      alert("Unable to delete event.");
+      toast.error("Unable to delete event.");
     } finally {
       setLoading(false);
     }

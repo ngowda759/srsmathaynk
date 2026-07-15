@@ -35,7 +35,7 @@ export function getEventStatus(
   endDate: DateValue
 ): EventStatus {
   if (!startDate || !endDate) {
-    return "Upcoming";
+    return "UPCOMING";
   }
 
   const today = new Date();
@@ -49,14 +49,14 @@ export function getEventStatus(
   end.setHours(23, 59, 59, 999);
 
   if (today < start) {
-    return "Upcoming";
+    return "UPCOMING";
   }
 
   if (today > end) {
-    return "Completed";
+    return "COMPLETED";
   }
 
-  return "Ongoing";
+  return "ONGOING";
 }
 
 /**
@@ -118,7 +118,7 @@ export function getUpcomingEvents(
   return sortEventsByDate(events).filter(
     (event) =>
       getEventStatus(event.startDate, event.endDate) ===
-      "Upcoming"
+      "UPCOMING"
   );
 }
 
@@ -131,7 +131,7 @@ export function getOngoingEvents(
   return sortEventsByDate(events).filter(
     (event) =>
       getEventStatus(event.startDate, event.endDate) ===
-      "Ongoing"
+      "ONGOING"
   );
 }
 
@@ -144,6 +144,6 @@ export function getCompletedEvents(
   return sortEventsByDate(events).filter(
     (event) =>
       getEventStatus(event.startDate, event.endDate) ===
-      "Completed"
+      "COMPLETED"
   );
 }
