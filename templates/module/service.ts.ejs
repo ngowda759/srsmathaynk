@@ -1,0 +1,147 @@
+/**
+ * ${MODULE_NAME} Service - Business logic layer
+ * 
+ * This file provides the service layer for ${MODULE_NAME}.
+ * All business logic should go through this layer.
+ */
+
+import { ${moduleName}Repository, ${ModuleName}, ${ModuleName}Request, ${ModuleName}Query } from "./repository";
+import { logger } from "@/lib/logger";
+
+// =============================================================================
+// SERVICE
+// =============================================================================
+
+class ${ModuleName}Service {
+  /**
+   * Get all ${moduleName} records
+   */
+  async get${ModuleName}s(query?: ${ModuleName}Query): Promise<${ModuleName}[]> {
+    try {
+      return await ${moduleName}Repository.findMany(query);
+    } catch (error) {
+      logger.error("[${ModuleName}Service] get${ModuleName}s failed", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get a single ${moduleName} by ID
+   */
+  async get${ModuleName}(id: string): Promise<${ModuleName} | null> {
+    try {
+      return await ${moduleName}Repository.findById(id);
+    } catch (error) {
+      logger.error("[${ModuleName}Service] get${ModuleName} failed", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Create a new ${moduleName}
+   */
+  async create${ModuleName}(data: ${ModuleName}Request): Promise<${ModuleName}> {
+    try {
+      // Add business validation here
+      if (!data.name?.trim()) {
+        throw new Error("Name is required");
+      }
+
+      return await ${moduleName}Repository.create(data);
+    } catch (error) {
+      logger.error("[${ModuleName}Service] create${ModuleName} failed", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update an existing ${moduleName}
+   */
+  async update${ModuleName}(id: string, data: Partial<${ModuleName}Request>): Promise<${ModuleName}> {
+    try {
+      // Add business validation here
+      const existing = await ${moduleName}Repository.findById(id);
+      if (!existing) {
+        throw new Error("${ModuleName} not found");
+      }
+
+      return await ${moduleName}Repository.update(id, data);
+    } catch (error) {
+      logger.error("[${ModuleName}Service] update${ModuleName} failed", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete a ${moduleName}
+   */
+  async delete${ModuleName}(id: string): Promise<void> {
+    try {
+      const existing = await ${moduleName}Repository.findById(id);
+      if (!existing) {
+        throw new Error("${ModuleName} not found");
+      }
+
+      await ${moduleName}Repository.delete(id);
+    } catch (error) {
+      logger.error("[${ModuleName}Service] delete${ModuleName} failed", error);
+      throw error;
+    }
+  }
+
+  // =========================================================================
+  // ADDITIONAL BUSINESS METHODS
+  // =========================================================================
+
+  /**
+   * Example: Get featured ${moduleName}s
+   */
+  async getFeatured${ModuleName}s(max = 10): Promise<${ModuleName}[]> {
+    try {
+      const ${moduleName}s = await ${moduleName}Repository.findMany({
+        featured: true,
+      } as ${ModuleName}Query);
+      
+      return ${moduleName}s.slice(0, max);
+    } catch (error) {
+      logger.error("[${ModuleName}Service] getFeatured${ModuleName}s failed", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Example: Toggle featured status
+   */
+  async toggleFeatured(id: string): Promise<${ModuleName}> {
+    try {
+      const ${moduleName} = await ${moduleName}Repository.findById(id);
+      if (!${moduleName}) {
+        throw new Error("${ModuleName} not found");
+      }
+
+      return await ${moduleName}Repository.update(id, {
+        featured: !${moduleName}.featured,
+      } as Partial<${ModuleName}Request>);
+    } catch (error) {
+      logger.error("[${ModuleName}Service] toggleFeatured failed", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Example: Get statistics
+   */
+  async getStats(): Promise<{ total: number }> {
+    try {
+      const ${moduleName}s = await ${moduleName}Repository.findMany();
+      return {
+        total: ${moduleName}s.length,
+      };
+    } catch (error) {
+      logger.error("[${ModuleName}Service] getStats failed", error);
+      throw error;
+    }
+  }
+}
+
+export const ${moduleName}Service = new ${ModuleName}Service();

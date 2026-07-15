@@ -351,7 +351,8 @@ model Media {
   committeeImages CommitteeMember[] @relation("CommitteeImages")
 
   // Relations - Gallery
-  galleryImages GalleryItem[]
+  galleryImages    GalleryItem[]
+  albumCoverImages GalleryAlbum[] @relation("AlbumCoverImages")
 
   // Relations - PoojaSchedule
   poojaImages PoojaSchedule[]
@@ -491,6 +492,7 @@ model Event {
   // Relations
   bookingItems BookingItem[]
   galleryItems GalleryItem[]
+  albums       GalleryAlbum[] @relation("AlbumFestivals")
 
   @@index([startDate, published])
   @@index([status])
@@ -1046,26 +1048,55 @@ model GalleryItem {
 
   // Media
   mediaId String
-  media   Media  @relation(fields: [mediaId], references: [id])
+  media   Media  @relation(fields: [mediaId], references: [id], onDelete: Cascade)
 
   // Event association
   eventId String?
   event   Event?  @relation(fields: [eventId], references: [id])
 
-  featured Boolean @default(false)
-  active   Boolean @default(true)
-  order    Int     @default(0)
+  // Type (PHOTO or VIDEO)
+  type GalleryItemType @default(PHOTO)
 
-  uploadedBy String?
+  // Display settings
+  altText    String?
+  caption    String?
+  captionKn  String?
+
+  // Album association via junction
+  albums AlbumItem[]
+
+  featured   Boolean @default(false)
+  showOnHome Boolean @default(false)
+  active     Boolean @default(true)
+
+  // Display
+  displayOrder Int @default(0)
+  order        Int @default(0)
+
+  // Exif/Media metadata
+  width    Int?
+  height   Int?
+  fileSize Int?
+  duration Int? // seconds (for video)
+
+  // Tags stored as JSON array
+  tags String[]
+
+  // View tracking
+  viewCount Int @default(0)
 
   // Audit fields
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+  uploadedById String?
 
   @@index([active])
   @@index([featured])
   @@index([eventId])
+  @@index([type, featured])
+  @@index([featured, showOnHome])
+  @@index([displayOrder])
   @@map("gallery_items")
 }
 
@@ -1500,4 +1531,148 @@ model Document {
   @@index([categoryId, active])
   @@index([featured])
   @@map("documents")
+}
+
+// =============================================================================
+// GALLERY MODULE (Sprint 4.2)
+// =============================================================================
+
+/// Gallery Album Category
+model GalleryCategory {
+  id String @id @default(uuid())
+
+  name        String  @unique
+  nameKn      String?
+  description String?
+  slug        String  @unique
+
+  icon  String?
+  color String?
+
+  order  Int     @default(0)
+  active Boolean @default(true)
+
+  // Festival year (optional, for time-based categories)
+  year Int?
+
+  // Audit fields
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  albums GalleryAlbum[]
+
+  @@index([active, order])
+  @@map("gallery_categories")
+}
+
+/// Gallery Album
+model GalleryAlbum {
+  id String @id @default(uuid())
+
+  title       String
+  titleKn     String?
+  slug        String  @unique
+  description String?
+  descriptionKn String?
+
+  // Cover image
+  coverImageId String?
+  coverImage   Media?  @relation("AlbumCoverImages", fields: [coverImageId], references: [id])
+
+  // Category
+  categoryId String?
+  category   GalleryCategory? @relation(fields: [categoryId], references: [id])
+
+  // Festival association (optional)
+  festivalId String?
+  festival   Event?  @relation("AlbumFestivals", fields: [festivalId], references: [id])
+
+  // Visibility and status
+  status     AlbumStatus @default(DRAFT)
+  visibility AlbumVisibility @default(PRIVATE)
+
+  // Features
+  featured  Boolean @default(false)
+  published Boolean @default(false)
+
+  // Media counts (denormalized for performance)
+  photoCount  Int @default(0)
+  videoCount  Int @default(0)
+
+  // Display
+  displayOrder Int @default(0)
+
+  // Metadata
+  location  String?
+  eventDate DateTime?
+
+  // Audit fields
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  deletedAt  DateTime?
+  createdById String?
+  updatedById String?
+
+  // Relations
+  items AlbumItem[]
+
+  @@index([status, published])
+  @@index([featured])
+  @@index([categoryId])
+  @@index([festivalId])
+  @@index([eventDate])
+  @@map("gallery_albums")
+}
+
+/// Album-Item junction (many-to-many)
+model AlbumItem {
+  id String @id @default(uuid())
+
+  albumId String
+  album   GalleryAlbum @relation(fields: [albumId], references: [id], onDelete: Cascade)
+
+  itemId String
+  item   GalleryItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  // Display order within album
+  displayOrder Int @default(0)
+
+  // Audit
+  createdAt DateTime @default(now())
+
+  @@unique([albumId, itemId])
+  @@index([albumId])
+  @@index([itemId])
+  @@map("album_items")
+}
+
+/// Gallery Tag
+model GalleryTag {
+  id   String @id @default(uuid())
+  name String @unique
+  slug String @unique
+
+  // Audit fields
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("gallery_tags")
+}
+
+enum AlbumStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum AlbumVisibility {
+  PRIVATE
+  PUBLIC
+  UNLISTED
+}
+
+enum GalleryItemType {
+  PHOTO
+  VIDEO
 }
