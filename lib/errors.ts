@@ -52,13 +52,23 @@ export class DatabaseError extends AppError {
 
 // Error response formatter
 export function formatErrorResponse(error: Error | AppError) {
-  if (error instanceof AppError) {
+  if (error instanceof ValidationError) {
     return {
       success: false,
       error: {
         code: error.code,
         message: error.message,
         ...(error.field && { field: error.field }),
+      },
+    }
+  }
+  
+  if (error instanceof AppError) {
+    return {
+      success: false,
+      error: {
+        code: error.code,
+        message: error.message,
       },
     }
   }

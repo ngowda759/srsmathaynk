@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { motion, useTransform, MotionValue } from "framer-motion";
+import { motion, useTransform, useScroll, useSpring } from "framer-motion";
 import {
   ArrowRight,
   CalendarDays,
@@ -9,7 +9,7 @@ import {
   Clock3,
   Sparkles,
 } from "lucide-react";
-import { useRef, useState, useEffect } from "react";
+import { useRef } from "react";
 
 import TempleButton from "@/components/ui/TempleButton";
 import { useHomepage } from "@/hooks/useHomepage";
@@ -17,35 +17,18 @@ import { useHomepage } from "@/hooks/useHomepage";
 export default function Hero() {
   const { homepage, loading } = useHomepage();
   const containerRef = useRef<HTMLDivElement>(null);
-  const [isMounted, setIsMounted] = useState(false);
-  const scrollYProgress = useRef(new MotionValue(0)).current;
-  
-  useEffect(() => {
-    setIsMounted(true);
-    
-    // Set up scroll tracking after mounting to avoid hydration errors
-    const updateScroll = () => {
-      if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect();
-        const windowHeight = window.innerHeight;
-        const elementTop = rect.top;
-        const elementHeight = rect.height;
-        
-        // Calculate progress based on element position
-        const start = elementTop;
-        const end = elementTop + elementHeight - windowHeight;
-        const progress = Math.max(0, Math.min(1, -start / (end - start)));
-        scrollYProgress.set(progress);
-      }
-    };
-    
-    window.addEventListener('scroll', updateScroll, { passive: true });
-    updateScroll();
-    
-    return () => {
-      window.removeEventListener('scroll', updateScroll);
-    };
-  }, [scrollYProgress]);
+  const isMounted = typeof window !== "undefined";
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ["start start", "end start"]
+  });
+
+  const smoothProgress = useSpring(scrollYProgress, {
+    stiffness: 100,
+    damping: 30,
+    restDelta: 0.001
+  });
+
 
   const heroImageY = useTransform(scrollYProgress, [0, 1], [0, 150]);
   const heroOpacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);

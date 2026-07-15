@@ -60,7 +60,7 @@ export default function EventDetailPage() {
     );
   }
 
-  const startDate = event.startDate.toDate();
+  const startDate = event.startDate instanceof Date ? event.startDate : new Date(event.startDate);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#fffaf3] to-white">

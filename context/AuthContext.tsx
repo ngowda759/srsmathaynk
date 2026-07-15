@@ -2,14 +2,14 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from "react"
 import { createClient, User } from "@supabase/supabase-js"
-import { authService, RegisterData, UserProfile } from "@/services/auth.service"
-import { normalizeRole, NormalizedRole, UserRole, Permission, hasPermission } from "@/types/user"
+import { login, register, logout, forgotPassword, updatePassword, getSupabaseClient } from "@/services/auth.client"
+import type { UserProfile, UserRole } from "@/services/auth.types"
+import { normalizeRole, NormalizedRole, Permission, hasPermission } from "@/types/user"
 
 // Create a Supabase client for client-side use
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+const supabase = getSupabaseClient()
+
+export type { UserProfile, UserRole }
 
 interface AuthContextType {
   user: User | null
@@ -17,7 +17,7 @@ interface AuthContextType {
   normalizedRole: NormalizedRole
   loading: boolean
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>
-  register: (data: RegisterData) => Promise<{ success: boolean; error?: string }>
+  register: (data: { name: string; email: string; phone: string; password: string }) => Promise<{ success: boolean; error?: string }>
   logout: () => Promise<void>
   forgotPassword: (email: string) => Promise<{ success: boolean; error?: string }>
   refreshProfile: () => Promise<void>
@@ -46,10 +46,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
 
-  async function loadProfile(userId: string) {
+  async function loadProfile() {
     try {
-      const data = await authService.getUserProfile(userId)
-      setProfile(data)
+      const response = await fetch("/api/profile")
+      if (response.ok) {
+        const data = await response.json()
+        setProfile(data)
+      } else {
+        setProfile(null)
+      }
     } catch (error) {
       console.error("Failed to load user profile:", error)
       setProfile(null)
@@ -57,9 +62,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }
 
   async function refreshProfile() {
-    if (!user) return
     setLoading(true)
-    await loadProfile(user.id)
+    await loadProfile()
     setLoading(false)
   }
 
@@ -71,7 +75,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         
         if (session?.user) {
           setUser(session.user)
-          await loadProfile(session.user.id)
+          await loadProfile()
         }
       } catch (error) {
         console.error("Failed to get session:", error)
@@ -87,7 +91,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       async (event, session) => {
         if (session?.user) {
           setUser(session.user)
-          await loadProfile(session.user.id)
+          await loadProfile()
         } else {
           setUser(null)
           setProfile(null)
@@ -101,42 +105,34 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }, [])
 
-  async function login(email: string, password: string) {
-    const result = await authService.login(email, password)
-    if (result.success && result.user) {
+  async function handleLogin(email: string, password: string) {
+    const result = await login(email, password)
+    if (result.success) {
       const { data: { session } } = await supabase.auth.getSession()
       if (session?.user) {
         setUser(session.user)
-        setProfile(result.user)
+        await loadProfile()
       }
     }
-    return { success: result.success, error: result.error }
+    return result
   }
 
-  async function register(data: RegisterData) {
-    const result = await authService.register(data)
-    if (result.success && result.user) {
+  async function handleRegister(data: { name: string; email: string; phone: string; password: string }) {
+    const result = await register(data)
+    if (result.success) {
       const { data: { session } } = await supabase.auth.getSession()
       if (session?.user) {
         setUser(session.user)
-        setProfile(result.user)
+        await loadProfile()
       }
     }
-    return { success: result.success, error: result.error }
+    return result
   }
 
-  async function logout() {
-    await authService.logout()
+  async function handleLogout() {
+    await logout()
     setUser(null)
     setProfile(null)
-  }
-
-  async function forgotPassword(email: string) {
-    return authService.forgotPassword(email)
-  }
-
-  async function updatePassword(currentPassword: string, newPassword: string) {
-    return authService.updatePassword(currentPassword, newPassword)
   }
 
   // Role-based permissions
@@ -162,9 +158,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
         profile,
         normalizedRole,
         loading,
-        login,
-        register,
-        logout,
+        login: handleLogin,
+        register: handleRegister,
+        logout: handleLogout,
         forgotPassword,
         refreshProfile,
         updatePassword,
@@ -191,3 +187,4 @@ export function useAuthContext() {
   }
   return context
 }
+

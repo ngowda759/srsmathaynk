@@ -55,33 +55,14 @@ function StatCard({ title, value, icon: Icon, loading, index }: { title: string;
   );
 }
 
-async function fetchCollectionCount(collectionName: string): Promise<number> {
-  const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
-  const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
-  
-  if (!apiKey || !projectId) return 0;
-  
-  try {
-    const response = await fetch(
-      `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/${collectionName}?key=${apiKey}`
-    );
-    if (!response.ok) return 0;
-    const data = await response.json();
-    return data.documents?.length || 0;
-  } catch {
-    return 0;
-  }
-}
-
-async function fetchUsersCount(): Promise<number> {
-  if (!db) return 0;
-  try {
-    const snapshot = await getDocs(collection(db, "users"));
-    return snapshot.size;
-  } catch {
-    return 0;
-  }
-}
+// Role display mapping
+const roleDisplayMap: Record<string, string> = {
+  super_admin: "Super Admin",
+  admin: "Temple Admin",
+  billing: "Billing Staff",
+  volunteer: "Volunteer",
+  devotee: "Devotee",
+};
 
 export default function DashboardPage() {
   const { profile, normalizedRole } = useAuth();
@@ -96,38 +77,7 @@ export default function DashboardPage() {
     totalDonations: 0,
     totalSevaBookings: 0,
   });
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function fetchStats() {
-      try {
-        const [eventsCount, galleryAlbumsCount, announcementsCount, timingsCount, usersCount] = await Promise.all([
-          fetchCollectionCount("events"),
-          fetchCollectionCount("galleryAlbums"),
-          fetchCollectionCount("announcements"),
-          fetchCollectionCount("timings"),
-          fetchUsersCount(),
-        ]);
-
-        setStats({
-          totalUsers: usersCount,
-          totalEvents: eventsCount,
-          totalSevas: 0,
-          totalGalleryImages: galleryAlbumsCount,
-          totalAnnouncements: announcementsCount,
-          totalTimings: timingsCount,
-          totalDonations: 0,
-          totalSevaBookings: 0,
-        });
-      } catch (error) {
-        console.error("Error fetching dashboard stats:", error);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchStats();
-  }, []);
+  const [loading] = useState(false);
 
   const today = new Date();
   const formattedDate = today.toLocaleDateString("en-IN", {
@@ -142,13 +92,7 @@ export default function DashboardPage() {
   else if (hour < 17) greeting = "Good Afternoon";
 
   const userName = profile?.name || "Admin";
-  const roleDisplay = {
-    super_admin: "Super Admin",
-    admin: "Temple Admin",
-    billing: "Billing Staff",
-    volunteer: "Volunteer",
-    devotee: "Devotee",
-  }[normalizedRole] || "Admin";
+  const roleDisplay = roleDisplayMap[normalizedRole || ""] || "Admin";
 
   return (
     <div className="space-y-8">

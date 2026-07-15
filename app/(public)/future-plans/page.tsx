@@ -1,12 +1,10 @@
 "use client";
 
-import { useState, useEffect  from "react";
-
+import { Building2, BookOpen, Heart, GraduationCap, Music, Sparkles } from "lucide-react";
 
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import Breadcrumb from "@/components/calendar/Breadcrumb";
-import { Building2, BookOpen, Heart, GraduationCap, Music, Sparkles  from "lucide-react";
 
 interface FuturePlan {
   id: string;
@@ -17,7 +15,7 @@ interface FuturePlan {
   icon: string;
   isActive: boolean;
   order: number;
-
+}
 
 interface FuturePlansData {
   heading: string;
@@ -25,7 +23,7 @@ interface FuturePlansData {
   subheading: string;
   subheadingKannada: string;
   plans: FuturePlan[];
-
+}
 
 const defaultFuturePlans: FuturePlansData = {
   heading: "Future Plans",
@@ -42,7 +40,7 @@ const defaultFuturePlans: FuturePlansData = {
       icon: "building",
       isActive: true,
       order: 1,
-    ,
+    },
     {
       id: "2",
       title: "Knowledge Dissemination Project",
@@ -52,7 +50,7 @@ const defaultFuturePlans: FuturePlansData = {
       icon: "book",
       isActive: true,
       order: 2,
-    ,
+    },
     {
       id: "3",
       title: "Gomata Protection Project",
@@ -62,7 +60,7 @@ const defaultFuturePlans: FuturePlansData = {
       icon: "heart",
       isActive: true,
       order: 3,
-    ,
+    },
     {
       id: "4",
       title: "Vedic Education",
@@ -72,7 +70,7 @@ const defaultFuturePlans: FuturePlansData = {
       icon: "graduation",
       isActive: true,
       order: 4,
-    ,
+    },
     {
       id: "5",
       title: "Cultural Education",
@@ -82,59 +80,29 @@ const defaultFuturePlans: FuturePlansData = {
       icon: "music",
       isActive: true,
       order: 5,
-    ,
+    },
   ],
-;
+};
 
-const iconMap: Record<string, React.ComponentType<{ className?: string >> = {
+const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   building: Building2,
   book: BookOpen,
   heart: Heart,
   graduation: GraduationCap,
   music: Music,
-;
+};
 
 export default function FuturePlansPage() {
-  const [data, setData] = useState<FuturePlansData>(defaultFuturePlans);
-  const [loading, setLoading] = useState(true);
-
-  
-    
-      
-        
-          
-          
-        
-        const docRef = doc(db, "settings", "futurePlans");
-        const docSnap = await getDoc(docRef);
-
-        if (docSnap.exists()) {
-          setData({ ...defaultFuturePlans, ...docSnap.data()  as FuturePlansData);
-        
-       catch (error) {
-        console.error("Error loading future plans:", error);
-       finally {
-        
-      
-    
-    loadData();
-  , []);
-
-  const activePlans = data.plans.filter((p) => p.isActive).sort((a, b) => a.order - b.order);
-
-  if (loading) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="h-12 w-12 animate-spin rounded-full border-4 border-emerald-600 border-t-transparent" />
-      </div>
-    );
-  
+  const data = defaultFuturePlans;
+  const activePlans = data.plans
+    .filter((p) => p.isActive)
+    .sort((a, b) => a.order - b.order);
 
   return (
     <>
       <Navbar />
       <main className="min-h-[calc(100vh-120px)] bg-white">
-        {/* Hero Section */
+        {/* Hero Section */}
         <section className="relative overflow-hidden bg-gradient-to-br from-emerald-800 via-teal-700 to-emerald-900 py-16">
           <div className="absolute inset-0 opacity-10">
             <div
@@ -143,35 +111,35 @@ export default function FuturePlansPage() {
                 backgroundImage: "url('/images/Hero.jpg')",
                 backgroundSize: "cover",
                 backgroundPosition: "center",
-              
+              }}
             />
           </div>
 
           <div className="relative mx-auto max-w-7xl px-6">
             <Breadcrumb current="Future Plans" />
-            <div className="text-center mt-4">
+            <div className="mt-4 text-center">
               <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-white/20 px-5 py-2 backdrop-blur">
                 <Sparkles className="h-5 w-5 text-emerald-200" />
                 <span className="text-sm font-medium text-white">Vision 2025+</span>
               </div>
 
               <h1 className="text-4xl font-bold text-white md:text-5xl">
-                {data.heading
+                {data.heading}
               </h1>
-              <p className="mx-auto mt-4 text-2xl text-emerald-100 font-serif">
-                {data.headingKannada
+              <p className="mx-auto mt-4 font-serif text-2xl text-emerald-100">
+                {data.headingKannada}
               </p>
               <p className="mx-auto mt-6 max-w-3xl text-xl text-emerald-100">
-                {data.subheading
+                {data.subheading}
               </p>
-              <p className="mx-auto mt-2 max-w-3xl text-lg text-emerald-200 font-serif">
-                {data.subheadingKannada
+              <p className="mx-auto mt-2 max-w-3xl font-serif text-lg text-emerald-200">
+                {data.subheadingKannada}
               </p>
             </div>
           </div>
         </section>
 
-        {/* Plans Section */
+        {/* Plans Section */}
         <section className="bg-gradient-to-b from-emerald-50 to-white px-6 py-16 sm:px-8 lg:px-12">
           <div className="mx-auto max-w-5xl">
             <div className="space-y-8">
@@ -179,46 +147,46 @@ export default function FuturePlansPage() {
                 const IconComponent = iconMap[plan.icon] || Sparkles;
                 return (
                   <div
-                    key={plan.id
+                    key={plan.id}
                     className="group relative overflow-hidden rounded-3xl border border-emerald-200 bg-white p-8 shadow-sm transition-all duration-300 hover:shadow-lg"
                   >
                     <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
-                      {/* Icon */
+                      {/* Icon */}
                       <div className="flex-shrink-0">
                         <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-lg">
                           <IconComponent className="h-8 w-8" />
                         </div>
                       </div>
 
-                      {/* Content */
+                      {/* Content */}
                       <div className="flex-1">
                         <h3 className="text-2xl font-bold text-stone-900">
-                          {plan.title
+                          {plan.title}
                         </h3>
-                        <p className="mt-1 text-lg text-emerald-600 font-serif">
-                          {plan.titleKannada
+                        <p className="mt-1 font-serif text-lg text-emerald-600">
+                          {plan.titleKannada}
                         </p>
 
-                        {/* Description */
+                        {/* Description */}
                         <p className="mt-4 leading-relaxed text-stone-600">
-                          {plan.description
+                          {plan.description}
                         </p>
-                        <p className="mt-2 leading-relaxed text-stone-600 font-serif italic">
-                          {plan.descriptionKannada
+                        <p className="mt-2 font-serif italic leading-relaxed text-stone-600">
+                          {plan.descriptionKannada}
                         </p>
                       </div>
                     </div>
 
-                    {/* Decorative Element */
+                    {/* Decorative Element */}
                     <div className="absolute -right-4 -top-4 h-24 w-24 rounded-full bg-gradient-to-br from-emerald-100 to-teal-100 opacity-50 blur-2xl" />
                   </div>
                 );
-              )
+              })}
             </div>
           </div>
         </section>
 
-        {/* Call to Action */
+        {/* Call to Action */}
         <section className="px-6 py-20 sm:px-8 lg:px-12">
           <div className="mx-auto max-w-4xl text-center">
             <div className="rounded-3xl bg-gradient-to-br from-emerald-700 via-teal-600 to-emerald-800 p-12 text-white">
@@ -242,4 +210,4 @@ export default function FuturePlansPage() {
       <Footer />
     </>
   );
-
+}

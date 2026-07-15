@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
     // Try AI provider first, fallback to Firebase
     const provider = getAIProvider();
     let responseMessage: AIMessage;
-    let responseSource: "ai" = "ai";
+    const responseSource = "ai" as const;
 
     if (provider.isConfigured()) {
       // Use AI provider with configurable system prompt
