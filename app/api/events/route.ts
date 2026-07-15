@@ -5,8 +5,16 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { eventService } from "@/services/event.service";
 import { EventQuery, EventRequest } from "@/types/event";
+
+
+export const dynamic = "force-dynamic";
+
+// Lazy load service to prevent Prisma initialization at build time
+async function geteventService() {
+  const { eventService } = await import("@/services/event.service");
+  return eventService;
+}
 
 // GET /api/events - List all events with optional filtering
 export async function GET(request: NextRequest) {
@@ -44,7 +52,7 @@ export async function GET(request: NextRequest) {
       query.limit = parseInt(searchParams.get("limit") || "50");
     }
 
-    const events = await eventService.getEvents(query);
+    const events = await (await geteventService()).getEvents(query);
 
     return NextResponse.json({
       success: true,
@@ -103,7 +111,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const event = await eventService.createEvent(body);
+    const event = await (await geteventService()).createEvent(body);
 
     return NextResponse.json(
       {

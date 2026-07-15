@@ -4,9 +4,21 @@
  * PATCH - Update current user profile
  */
 import { NextRequest, NextResponse } from "next/server"
-import { createServerClient } from "@/lib/supabase/server"
-import { prisma } from "@/lib/db"
 import { z } from "zod"
+
+
+export const dynamic = "force-dynamic";
+
+// Lazy load to prevent initialization at build time
+async function getPrisma() {
+  const { prisma } = await import("@/lib/db");
+  return prisma;
+}
+
+async function getSupabase() {
+  const { createServerClient } = await import("@/lib/supabase/server");
+  return createServerClient();
+}
 
 const updateProfileSchema = z.object({
   name: z.string().min(1).optional(),
@@ -17,13 +29,14 @@ const updateProfileSchema = z.object({
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createServerClient()
+    const supabase = await getSupabase()
     const { data: { user }, error: authError } = await supabase.auth.getUser()
 
     if (authError || !user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    const prisma = await getPrisma()
     const profile = await prisma.profile.findUnique({
       where: { userId: user.id },
     })
@@ -41,7 +54,7 @@ export async function GET(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
-    const supabase = await createServerClient()
+    const supabase = await getSupabase()
     const { data: { user }, error: authError } = await supabase.auth.getUser()
 
     if (authError || !user) {
@@ -49,22 +62,19 @@ export async function PATCH(request: NextRequest) {
     }
 
     const body = await request.json()
-    const validation = updateProfileSchema.safeParse(body)
+    const validatedData = updateProfileSchema.parse(body)
 
-    if (!validation.success) {
-      return NextResponse.json(
-        { error: "Invalid input", details: validation.error.issues },
-        { status: 400 }
-      )
-    }
-
+    const prisma = await getPrisma()
     const updatedProfile = await prisma.profile.update({
       where: { userId: user.id },
-      data: validation.data,
+      data: validatedData,
     })
 
     return NextResponse.json(updatedProfile)
-  } catch (error) {
+  } catch (error: unknown) {
+    if (error && typeof error === 'object' && 'errors' in error) {
+      return NextResponse.json({ error: (error as { errors: unknown }).errors }, { status: 400 })
+    }
     console.error("Error updating profile:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }

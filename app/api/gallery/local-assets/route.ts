@@ -2,6 +2,8 @@ import fs from "fs";
 import path from "path";
 import { NextResponse } from "next/server";
 
+
+export const dynamic = "force-dynamic";
 const imageDirectory = path.join(process.cwd(), "public", "images", "temple");
 const videoDirectory = path.join(process.cwd(), "public", "videos");
 
