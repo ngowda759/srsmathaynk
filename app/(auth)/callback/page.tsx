@@ -1,11 +1,11 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { Suspense, useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import toast from "react-hot-toast"
 
-export default function CallbackPage() {
+function CallbackContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading")
@@ -110,5 +110,25 @@ export default function CallbackPage() {
         )}
       </div>
     </div>
+  )
+}
+
+function LoadingFallback() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-amber-50/50 via-orange-50/30 to-stone-50">
+      <div className="text-center">
+        <div className="w-16 h-16 border-4 border-amber-200 border-t-amber-600 rounded-full animate-spin mx-auto mb-4" />
+        <p className="text-lg font-medium text-stone-700">Loading...</p>
+        <p className="text-sm text-stone-500">Please wait</p>
+      </div>
+    </div>
+  )
+}
+
+export default function CallbackPage() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <CallbackContent />
+    </Suspense>
   )
 }

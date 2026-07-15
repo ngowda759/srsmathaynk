@@ -13,5 +13,5 @@ if (process.env.NODE_ENV !== 'production') {
 // Type for accessing Prisma model operations
 // Used by BaseRepository to access any model
 export type BasePrismaClient = {
-  [K in keyof Prisma]: Prisma[K] extends { findMany: Function } ? Prisma[K] : never;
+  [K in keyof Prisma]: Prisma[K] extends { findMany: (...args: any[]) => any } ? Prisma[K] : never;
 }[keyof Prisma];

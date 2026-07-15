@@ -4,20 +4,22 @@ export function getDashboardRoute(profile: UserProfile | null) {
   if (!profile) return "/";
 
   switch (profile.role) {
-    case "super_admin":
-    case "temple_admin":
+    case "SUPER_ADMIN":
       return "/admin";
 
-    case "priest":
+    case "ADMIN":
+      return "/admin";
+
+    case "PRIEST":
       return "/priest";
 
-    case "staff":
+    case "STAFF":
       return "/staff";
 
-    case "volunteer":
+    case "VOLUNTEER":
       return "/volunteer";
 
-    case "devotee":
+    case "DEVOTEE":
       return "/devotee";
 
     default:

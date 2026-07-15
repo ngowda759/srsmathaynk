@@ -5,7 +5,7 @@
  */
 import { NextRequest, NextResponse } from "next/server"
 import { createServerClient } from "@/lib/supabase/server"
-import { bookingsRepository } from "@/repositories/sevas"
+import { sevasRepository } from "@/repositories/sevas"
 import { prisma } from "@/lib/db"
 import { z } from "zod"
 
@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get("page") || "1")
     const limit = parseInt(searchParams.get("limit") || "20")
 
-    const result = await bookingsRepository.findAll({ page, limit, filters })
+    const result = await sevasRepository.findAll({ page, limit, filters })
     return NextResponse.json(result.data)
   } catch (error) {
     console.error("Error fetching bookings:", error)
@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
     const profile = await getUserProfile()
     if (profile) input.userId = profile.id
 
-    const result = await bookingsRepository.create(input)
+    const result = await sevasRepository.create(input)
     if (!result.success) {
       return NextResponse.json({ error: result.error }, { status: 500 })
     }

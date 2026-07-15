@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { 
   Plus, 
   Edit2, 
@@ -9,20 +9,9 @@ import {
   X, 
   Search,
   Tag,
-  MessageSquare,
   AlertCircle,
   CheckCircle
 } from "lucide-react";
-
-import { 
-  collection, 
-  getDocs, 
-  addDoc, 
-  updateDoc, 
-  deleteDoc, 
-  doc,
-  serverTimestamp 
-} 
 
 interface ChatTrainingData {
   id: string;
@@ -31,8 +20,6 @@ interface ChatTrainingData {
   category: string;
   priority: number;
   active: boolean;
-  createdAt: any;
-  updatedAt: any;
 }
 
 const CATEGORIES = [
@@ -48,7 +35,7 @@ const CATEGORIES = [
   "General"
 ];
 
-const DEFAULT_RESPONSES: Omit<ChatTrainingData, "id" | "createdAt" | "updatedAt">[] = [
+const DEFAULT_RESPONSES: Omit<ChatTrainingData, "id">[] = [
   {
     keywords: ["timing", "open", "hour", "morning", "evening"],
     response: "🕐 **Temple Timings**\n\n**Morning:** 06:00 AM - 12:00 PM\n**Evening:** 05:00 PM - 08:30 PM\n\nSpecial timings apply during festivals. Please contact the temple office for details.",
@@ -87,8 +74,12 @@ const DEFAULT_RESPONSES: Omit<ChatTrainingData, "id" | "createdAt" | "updatedAt"
 ];
 
 export default function ChatTrainingPage() {
-  const [trainingData, setTrainingData] = useState<ChatTrainingData[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [trainingData, setTrainingData] = useState<ChatTrainingData[]>(
+    DEFAULT_RESPONSES.map((item, index) => ({
+      ...item,
+      id: `default-${index + 1}`,
+    }))
+  );
   const [saving, setSaving] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
@@ -103,55 +94,6 @@ export default function ChatTrainingPage() {
   const [formPriority, setFormPriority] = useState(1);
   const [formActive, setFormActive] = useState(true);
 
-  useEffect(() => {
-    loadTrainingData();
-  }, []);
-
-  async function loadTrainingData() {
-    try {
-      if (!db) {
-        console.log("Firebase not configured");
-        setLoading(false);
-        return;
-      }
-
-      const snapshot = await getDocs(collection(db, "chatTraining"));
-      const data = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as ChatTrainingData[];
-
-      // Sort by priority
-      data.sort((a, b) => a.priority - b.priority);
-      setTrainingData(data);
-
-      // Initialize with defaults if empty
-      if (data.length === 0) {
-        await initializeDefaults();
-      }
-    } catch (error) {
-      console.error("Error loading training data:", error);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function initializeDefaults() {
-    try {
-      for (const item of DEFAULT_RESPONSES) {
-        await addDoc(collection(db!, "chatTraining"), {
-          ...item,
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-        });
-      }
-      await loadTrainingData();
-      showMessage("success", "Default responses initialized");
-    } catch (error) {
-      console.error("Error initializing defaults:", error);
-    }
-  }
-
   function showMessage(type: "success" | "error", text: string) {
     setMessage({ type, text });
     setTimeout(() => setMessage(null), 3000);
@@ -165,8 +107,6 @@ export default function ChatTrainingPage() {
       category: "General",
       priority: 1,
       active: true,
-      createdAt: null,
-      updatedAt: null,
     });
     setFormKeywords("");
     setFormResponse("");
@@ -191,7 +131,7 @@ export default function ChatTrainingPage() {
     setIsNew(false);
   }
 
-  async function saveItem() {
+  function saveItem() {
     if (!formKeywords.trim() || !formResponse.trim()) {
       showMessage("error", "Keywords and response are required");
       return;
@@ -202,29 +142,27 @@ export default function ChatTrainingPage() {
     setSaving(true);
     try {
       if (isNew) {
-        await addDoc(collection(db!, "chatTraining"), {
+        const newItem: ChatTrainingData = {
+          id: `new-${Date.now()}`,
           keywords,
           response: formResponse,
           category: formCategory,
           priority: formPriority,
           active: formActive,
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-        });
+        };
+        setTrainingData([...trainingData, newItem]);
         showMessage("success", "Training data added successfully");
       } else if (editingItem?.id) {
-        await updateDoc(doc(db!, "chatTraining", editingItem.id), {
-          keywords,
-          response: formResponse,
-          category: formCategory,
-          priority: formPriority,
-          active: formActive,
-          updatedAt: serverTimestamp(),
-        });
+        setTrainingData(
+          trainingData.map((item) =>
+            item.id === editingItem.id
+              ? { ...item, keywords, response: formResponse, category: formCategory, priority: formPriority, active: formActive }
+              : item
+          )
+        );
         showMessage("success", "Training data updated successfully");
       }
       closeForm();
-      await loadTrainingData();
     } catch (error) {
       console.error("Error saving:", error);
       showMessage("error", "Failed to save training data");
@@ -233,30 +171,19 @@ export default function ChatTrainingPage() {
     }
   }
 
-  async function deleteItem(id: string) {
+  function deleteItem(id: string) {
     if (!confirm("Are you sure you want to delete this training data?")) return;
 
-    try {
-      await deleteDoc(doc(db!, "chatTraining", id));
-      showMessage("success", "Training data deleted");
-      await loadTrainingData();
-    } catch (error) {
-      console.error("Error deleting:", error);
-      showMessage("error", "Failed to delete training data");
-    }
+    setTrainingData(trainingData.filter((item) => item.id !== id));
+    showMessage("success", "Training data deleted");
   }
 
-  async function toggleActive(item: ChatTrainingData) {
-    try {
-      await updateDoc(doc(db!, "chatTraining", item.id), {
-        active: !item.active,
-        updatedAt: serverTimestamp(),
-      });
-      await loadTrainingData();
-    } catch (error) {
-      console.error("Error toggling:", error);
-      showMessage("error", "Failed to update status");
-    }
+  function toggleActive(item: ChatTrainingData) {
+    setTrainingData(
+      trainingData.map((i) =>
+        i.id === item.id ? { ...i, active: !i.active } : i
+      )
+    );
   }
 
   // Filter data
@@ -268,37 +195,36 @@ export default function ChatTrainingPage() {
     return matchesSearch && matchesCategory;
   });
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-96">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-600" />
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-6">
+    <div className="p-6 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-stone-900">Chat Training Data</h1>
-          <p className="text-stone-500 mt-1">
-            Manage AI assistant responses for common queries
-          </p>
-        </div>
-        <button
-          onClick={openNewForm}
-          className="flex items-center gap-2 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors"
-        >
-          <Plus className="w-5 h-5" />
-          Add Response
-        </button>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-stone-900">Chat Training</h1>
+        <p className="text-stone-600">Manage AI chatbot responses and keywords</p>
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4">
+      {/* Message Toast */}
+      {message && (
+        <div
+          className={`mb-4 p-4 rounded-lg flex items-center gap-2 ${
+            message.type === "success"
+              ? "bg-green-50 text-green-800 border border-green-200"
+              : "bg-red-50 text-red-800 border border-red-200"
+          }`}
+        >
+          {message.type === "success" ? (
+            <CheckCircle className="w-5 h-5" />
+          ) : (
+            <AlertCircle className="w-5 h-5" />
+          )}
+          <span>{message.text}</span>
+        </div>
+      )}
+
+      {/* Toolbar */}
+      <div className="flex flex-col sm:flex-row gap-4 mb-6">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-stone-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
           <input
             type="text"
             placeholder="Search keywords or responses..."
@@ -317,69 +243,37 @@ export default function ChatTrainingPage() {
             <option key={cat} value={cat}>{cat}</option>
           ))}
         </select>
+        <button
+          onClick={openNewForm}
+          className="flex items-center gap-2 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors"
+        >
+          <Plus className="w-4 h-4" />
+          Add Response
+        </button>
       </div>
 
-      {/* Message */}
-      {message && (
-        <div className={`flex items-center gap-2 px-4 py-3 rounded-lg ${
-          message.type === "success" 
-            ? "bg-green-50 text-green-700 border border-green-200" 
-            : "bg-red-50 text-red-700 border border-red-200"
-        }`}>
-          {message.type === "success" ? (
-            <CheckCircle className="w-5 h-5" />
-          ) : (
-            <AlertCircle className="w-5 h-5" />
-          )}
-          {message.text}
-        </div>
-      )}
-
-      {/* No Firebase Warning */}
-      {!db && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-          <div className="flex items-center gap-2 text-yellow-800">
-            <AlertCircle className="w-5 h-5" />
-            <span className="font-medium">Firebase not configured</span>
-          </div>
-          <p className="text-yellow-700 mt-1">
-            Please configure Firebase to manage chat training data.
-          </p>
-        </div>
-      )}
-
-      {/* Data List */}
-      <div className="bg-white rounded-xl border border-stone-200 overflow-hidden">
+      {/* Table */}
+      <div className="bg-white rounded-lg border border-stone-200 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-stone-50 border-b border-stone-200">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">
-                  Keywords
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">
-                  Category
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">
-                  Priority
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-stone-500 uppercase tracking-wider">
-                  Actions
-                </th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-stone-600">Keywords</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-stone-600">Category</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-stone-600">Priority</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-stone-600">Status</th>
+                <th className="px-4 py-3 text-right text-sm font-medium text-stone-600">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-stone-200">
               {filteredData.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-stone-500">
-                    <MessageSquare className="w-12 h-12 mx-auto text-stone-300 mb-2" />
-                    <p>No training data found</p>
+                  <td colSpan={5} className="px-4 py-12 text-center">
+                    <Tag className="w-12 h-12 mx-auto text-stone-300 mb-4" />
+                    <p className="text-stone-500 mb-2">No training data found</p>
                     <button
                       onClick={openNewForm}
-                      className="mt-2 text-amber-600 hover:text-amber-700"
+                      className="text-amber-600 hover:text-amber-700"
                     >
                       Add your first response
                     </button>

@@ -14,11 +14,13 @@ import { useRef, useState, useEffect } from "react";
 import TempleButton from "@/components/ui/TempleButton";
 import { useHomepage } from "@/hooks/useHomepage";
 
+// Create MotionValue outside component to avoid refs during render
+const scrollYProgressValue = new MotionValue(0);
+
 export default function Hero() {
   const { homepage, loading } = useHomepage();
   const containerRef = useRef<HTMLDivElement>(null);
   const [isMounted, setIsMounted] = useState(false);
-  const scrollYProgress = useRef(new MotionValue(0)).current;
   
   useEffect(() => {
     setIsMounted(true);
@@ -35,7 +37,7 @@ export default function Hero() {
         const start = elementTop;
         const end = elementTop + elementHeight - windowHeight;
         const progress = Math.max(0, Math.min(1, -start / (end - start)));
-        scrollYProgress.set(progress);
+        scrollYProgressValue.set(progress);
       }
     };
     
@@ -45,10 +47,11 @@ export default function Hero() {
     return () => {
       window.removeEventListener('scroll', updateScroll);
     };
-  }, [scrollYProgress]);
+  }, []);
 
-  const heroImageY = useTransform(scrollYProgress, [0, 1], [0, 150]);
-  const heroOpacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
+  const heroImageY = useTransform(scrollYProgressValue, [0, 1], [0, 150]);
+  const heroOpacity = useTransform(scrollYProgressValue, [0, 0.5], [1, 0]);
+
 
   if (loading) {
     return (

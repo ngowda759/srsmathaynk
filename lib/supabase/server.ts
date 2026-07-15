@@ -1,10 +1,10 @@
-import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { createServerClient as _createServerClient, type CookieOptions } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
 export async function createClient() {
   const cookieStore = await cookies()
 
-  return createServerClient(
+  return _createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
@@ -30,3 +30,6 @@ export async function createClient() {
     }
   )
 }
+
+// Backward compatibility alias
+export const createServerClient = createClient;
