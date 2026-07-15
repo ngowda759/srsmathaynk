@@ -66,16 +66,16 @@ function UsersPageContent() {
 
       <UserStats
         total={users.length}
-        active={users.filter((u) => u.isActive).length}
+        active={users.filter((u) => u.active).length}
         admins={
           users.filter(
             (u) =>
-              u.role === "Temple Admin" ||
-              u.role === "Super Admin"
+              u.role === "ADMIN" ||
+              u.role === "SUPER_ADMIN"
           ).length
         }
         volunteers={
-          users.filter((u) => u.role === "Volunteer").length
+          users.filter((u) => u.role === "VOLUNTEER").length
         }
       />
 

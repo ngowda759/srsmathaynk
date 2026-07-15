@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 interface DonationNotification {
   id: string;
@@ -14,16 +14,8 @@ interface DonationNotification {
 export function useDonationNotifications() {
   const [notifications, setNotifications] = useState<DonationNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    // Firebase has been removed - return empty notifications
-    console.log("[useDonationNotifications] Firebase removed - returning empty notifications");
-    setNotifications([]);
-    setUnreadCount(0);
-    setLoading(false);
-  }, []);
+  const [loading] = useState(false);
+  const [error] = useState<string | null>(null);
 
   const markAsRead = (id: string) => {
     setNotifications((prev) => prev.filter((n) => n.id !== id));

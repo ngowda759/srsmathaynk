@@ -4,7 +4,7 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/useAuth"
 import { UserRole } from "@/types/user"
-import { Eye, EyeOff, Shield, Mail, Phone, MapPin, Calendar } from "lucide-react"
+import { Eye, EyeOff, Shield, Mail, Phone, Calendar } from "lucide-react"
 import toast from "react-hot-toast"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
@@ -187,13 +187,6 @@ export default function ProfilePage() {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <MapPin className="w-5 h-5 text-stone-400" />
-              <div>
-                <p className="text-sm text-stone-500">Address</p>
-                <p className="font-medium">{profile.address || "Not set"}</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
               <Phone className="w-5 h-5 text-stone-400" />
               <div>
                 <p className="text-sm text-stone-500">Phone</p>
@@ -298,7 +291,6 @@ export default function ProfilePage() {
         <h2 className="text-xl font-semibold mb-4">Account Information</h2>
         <div className="space-y-2 text-sm text-stone-500">
           <p>Account ID: {profile.id}</p>
-          <p>User ID: {profile.userId || "N/A"}</p>
           <p>Account Status: {profile.isActive ? "Active" : "Inactive"}</p>
         </div>
       </Card>

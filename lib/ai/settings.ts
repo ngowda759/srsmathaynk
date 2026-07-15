@@ -10,7 +10,7 @@ export interface AISettings {
   systemPrompt: string;
   welcomeMessage: string;
   enabled: boolean;
-  updatedAt: any;
+  updatedAt: Date | null;
 }
 
 // Default AI Settings
@@ -18,7 +18,7 @@ export const DEFAULT_AI_SETTINGS: AISettings = {
   systemPrompt: SYSTEM_PROMPT,
   welcomeMessage: WELCOME_MESSAGE,
   enabled: true,
-  updatedAt: null,
+  updatedAt: null as Date | null,
 };
 
 // Get AI settings (returns defaults since Firebase is removed)

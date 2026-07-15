@@ -337,14 +337,12 @@ async function seedSiteSettings() {
       where: { key: setting.key },
       update: {
         value: setting.value,
-        description: setting.description,
         category: setting.category,
         isPublic: setting.isPublic,
       },
       create: {
         key: setting.key,
         value: setting.value,
-        description: setting.description,
         category: setting.category,
         isPublic: setting.isPublic,
       },

@@ -102,13 +102,8 @@ const defaultData: FuturePlansData = {
 
 export default function FuturePlansSettingsPage() {
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [saving] = useState(false);
   const [data, setData] = useState<FuturePlansData>(defaultData);
-
-  useEffect(() => {
-    // Firebase has been removed - use default data only
-    setLoading(false);
-  }, []);
 
   async function saveData() {
     // Firebase has been removed - save functionality not available
