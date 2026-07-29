@@ -4,10 +4,21 @@
  */
 import { Resend } from 'resend'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
-
 const FROM_EMAIL = process.env.EMAIL_FROM || 'noreply@srsmathaynk.org'
 const FROM_NAME = 'Sri Raghavendra Swamy Matha'
+
+// Lazy initialization to avoid build-time errors
+let resendClient: Resend | null = null
+
+function getResendClient(): Resend | null {
+  if (!process.env.RESEND_API_KEY) {
+    return null
+  }
+  if (!resendClient) {
+    resendClient = new Resend(process.env.RESEND_API_KEY)
+  }
+  return resendClient
+}
 
 interface SendEmailParams {
   to: string
@@ -21,7 +32,9 @@ class EmailService {
    * Send an email
    */
   async send(params: SendEmailParams): Promise<{ success: boolean; id?: string; error?: string }> {
-    if (!process.env.RESEND_API_KEY) {
+    const resend = getResendClient()
+    
+    if (!resend) {
       console.error('RESEND_API_KEY not configured')
       return { success: false, error: 'Email service not configured' }
     }
