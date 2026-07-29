@@ -2,6 +2,7 @@
  * Razorpay Payment Service
  * Handles payment processing for donations and sevA bookings
  */
+import { createHmac } from 'crypto'
 import { prisma } from '@/lib/db'
 import type { PaymentStatus } from '@prisma/client'
 
@@ -206,11 +207,8 @@ class RazorpayService {
    * Verify payment signature
    */
   verifyPaymentSignature(params: VerifyPaymentParams): boolean {
-    const crypto = require('crypto')
-
     const payload = `${params.razorpayOrderId}|${params.razorpayPaymentId}`
-    const expectedSignature = crypto
-      .createHmac('sha256', this.apiSecret)
+    const expectedSignature = createHmac('sha256', this.apiSecret)
       .update(payload)
       .digest('hex')
 
@@ -221,10 +219,7 @@ class RazorpayService {
    * Verify webhook signature
    */
   verifyWebhookSignature(payload: string, signature: string): boolean {
-    const crypto = require('crypto')
-
-    const expectedSignature = crypto
-      .createHmac('sha256', this.webhookSecret)
+    const expectedSignature = createHmac('sha256', this.webhookSecret)
       .update(payload)
       .digest('hex')
 
