@@ -15,8 +15,8 @@ export const dynamic = 'force-dynamic'
  * Verifies the user's email address
  */
 export async function GET(request: NextRequest) {
+  const requestUrl = new URL(request.url)
   try {
-    const requestUrl = new URL(request.url)
     const token = requestUrl.searchParams.get('token')
     const type = requestUrl.searchParams.get('type')
 
@@ -140,7 +140,14 @@ export async function POST(request: NextRequest) {
       include: { userRoles: { include: { role: true } } },
     })
 
-    const isAdmin = adminProfile?.userRoles.some(
+    if (!adminProfile) {
+      return NextResponse.json(
+        { error: 'Profile not found' },
+        { status: 404 }
+      )
+    }
+
+    const isAdmin = adminProfile.userRoles.some(
       ur => ur.role.name === 'ADMIN' || ur.role.name === 'SUPER_ADMIN'
     )
 

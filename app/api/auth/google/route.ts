@@ -75,7 +75,7 @@ export async function GET(request: NextRequest) {
       const metadata = user.user_metadata as Record<string, unknown>
       const fullName = (metadata?.full_name || metadata?.name) as string | undefined
 
-      profile = await prisma.profile.create({
+      const newProfile = await prisma.profile.create({
         data: {
           userId: user.id,
           email: user.email!,
@@ -83,7 +83,7 @@ export async function GET(request: NextRequest) {
           emailVerified: true, // Google accounts are pre-verified
           isActive: true,
         },
-      })!
+      })
 
       // Assign DEVOTEE role
       const devoteeRole = await prisma.role.findUnique({
@@ -93,7 +93,7 @@ export async function GET(request: NextRequest) {
       if (devoteeRole) {
         await prisma.userRole.create({
           data: {
-            profileId: profile.id,
+            profileId: newProfile.id,
             roleId: devoteeRole.id,
           },
         })
@@ -101,13 +101,13 @@ export async function GET(request: NextRequest) {
 
       // Log profile creation
       await auditLogService.log({
-        profileId: profile.id,
+        profileId: newProfile.id,
         action: 'CREATE',
         entityType: 'Profile',
-        entityId: profile.id,
+        entityId: newProfile.id,
         newData: {
-          email: profile.email,
-          name: profile.name,
+          email: newProfile.email,
+          name: newProfile.name,
           source: 'google_oauth',
         },
         ipAddress,
@@ -116,14 +116,14 @@ export async function GET(request: NextRequest) {
 
       // Record successful login
       await loginHistoryService.recordLogin({
-        profileId: profile.id,
+        profileId: newProfile.id,
         success: true,
         ipAddress,
         userAgent,
       })
 
       await auditLogService.logLogin({
-        profileId: profile.id,
+        profileId: newProfile.id,
         success: true,
         ipAddress,
         userAgent,
