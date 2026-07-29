@@ -3,11 +3,9 @@
  * Handles the OAuth callback from Supabase Google authentication
  */
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/client'
 import { createServerClient } from '@supabase/ssr'
 import { prisma } from '@/lib/db'
 import { auditLogService } from '@/services/audit-log.service'
-import { loginHistoryService } from '@/services/login-history.service'
 
 export const dynamic = 'force-dynamic'
 
@@ -16,8 +14,8 @@ export const dynamic = 'force-dynamic'
  * Handles the OAuth callback from Supabase
  */
 export async function GET(request: NextRequest) {
+  const requestUrl = new URL(request.url)
   try {
-    const requestUrl = new URL(request.url)
     const code = requestUrl.searchParams.get('code')
     const error = requestUrl.searchParams.get('error')
     const state = requestUrl.searchParams.get('state')
@@ -101,7 +99,7 @@ export async function GET(request: NextRequest) {
 
       // Log profile creation
       await auditLogService.log({
-        profileId: newProfile.id,
+        userId: user.id,
         action: 'CREATE',
         entityType: 'Profile',
         entityId: newProfile.id,
@@ -114,16 +112,9 @@ export async function GET(request: NextRequest) {
         userAgent,
       })
 
-      // Record successful login
-      await loginHistoryService.recordLogin({
-        profileId: newProfile.id,
-        success: true,
-        ipAddress,
-        userAgent,
-      })
-
+      // Log successful login
       await auditLogService.logLogin({
-        profileId: newProfile.id,
+        userId: user.id,
         success: true,
         ipAddress,
         userAgent,
@@ -140,16 +131,9 @@ export async function GET(request: NextRequest) {
       data: { lastLoginAt: new Date() },
     })
 
-    // Record successful login
-    await loginHistoryService.recordLogin({
-      profileId: profile.id,
-      success: true,
-      ipAddress,
-      userAgent,
-    })
-
+    // Log successful login
     await auditLogService.logLogin({
-      profileId: profile.id,
+      userId: user.id,
       success: true,
       ipAddress,
       userAgent,

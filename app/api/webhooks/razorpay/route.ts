@@ -1,11 +1,12 @@
 /**
  * Razorpay Webhook Handler
- * Handles payment events from Razorpay
+ * Handles payment events from Razorpay for donations
  */
 import { NextRequest, NextResponse } from 'next/server'
 import { razorpayService } from '@/services/razorpay.service'
 import { prisma } from '@/lib/db'
 import { auditLogService } from '@/services/audit-log.service'
+import { PaymentMethod } from '@prisma/client'
 
 export const dynamic = 'force-dynamic'
 
@@ -48,6 +49,18 @@ interface WebhookPayload {
     }
   }
   created_at: number
+}
+
+// Map Razorpay methods to our PaymentMethod enum
+function mapPaymentMethod(method: string): PaymentMethod {
+  const methodMap: Record<string, PaymentMethod> = {
+    'card': 'CARD',
+    'upi': 'UPI',
+    'netbanking': 'NET_BANKING',
+    'wallet': 'WALLET',
+    'bank_transfer': 'BANK_TRANSFER',
+  }
+  return methodMap[method.toLowerCase()] || 'BANK_TRANSFER'
 }
 
 /**
@@ -127,90 +140,58 @@ async function handlePaymentSuccess(payload: WebhookPayload): Promise<void> {
     return
   }
 
-  const { id: paymentId, order_id: orderId, amount, currency, method, email } = paymentEntity
+  const { id: razorpayPaymentId, order_id: orderId, amount, currency, method } = paymentEntity
 
-  console.log(`Payment success: ${paymentId}, Order: ${orderId}`)
+  console.log(`Payment success: ${razorpayPaymentId}, Order: ${orderId}`)
 
   try {
-    // Find and update our payment record
-    const dbPayment = await prisma.payment.findFirst({
+    // Find the donation by order ID (stored as razorpayId)
+    const donation = await prisma.donation.findFirst({
       where: {
-        OR: [
-          { razorpayId: paymentId },
-          { orderId: orderId },
-        ],
+        paymentId: orderId,
       },
     })
 
-    if (dbPayment) {
-      await prisma.payment.update({
-        where: { id: dbPayment.id },
+    if (donation) {
+      // Create a payment attempt record
+      await prisma.donationPayment.create({
         data: {
+          donationId: donation.id,
+          amount: amount / 100,
+          currency,
+          paymentMethod: mapPaymentMethod(method),
+          paymentId: razorpayPaymentId,
           status: 'SUCCESS',
-          verified: true,
-          method,
+          completedAt: new Date(),
         },
       })
 
-      // Update donation if exists
-      if (dbPayment.donationId) {
-        const donation = await prisma.donation.update({
-          where: { id: dbPayment.donationId },
-          data: {
-            status: 'COMPLETED',
-            paymentMethod: method,
-          },
-        })
+      // Update donation status
+      await prisma.donation.update({
+        where: { id: donation.id },
+        data: {
+          status: 'COMPLETED',
+          paymentMethod: mapPaymentMethod(method),
+          paymentId: razorpayPaymentId,
+        },
+      })
 
-        // Log the donation
-        await auditLogService.log({
-          action: 'UPDATE',
-          entityType: 'Donation',
-          entityId: donation.id,
-          newData: {
-            status: 'COMPLETED',
-            amount: amount / 100,
-            paymentMethod: method,
-          },
-          metadata: {
-            razorpayPaymentId: paymentId,
-            source: 'razorpay_webhook',
-          },
-        })
-      }
-
-      // Update booking if exists
-      if (dbPayment.bookingId) {
-        const booking = await prisma.booking.update({
-          where: { id: dbPayment.bookingId },
-          data: {
-            status: 'CONFIRMED',
-          },
-        })
-
-        await auditLogService.log({
-          action: 'UPDATE',
-          entityType: 'Booking',
-          entityId: booking.id,
-          newData: {
-            status: 'CONFIRMED',
-          },
-          metadata: {
-            razorpayPaymentId: paymentId,
-            source: 'razorpay_webhook',
-          },
-        })
-      }
-
-      // Generate receipt
-      if (dbPayment.status !== 'SUCCESS' || !dbPayment.receiptNumber) {
-        await razorpayService.generateReceipt(dbPayment.id)
-      }
-
+      // Log the donation
+      await auditLogService.log({
+        action: 'UPDATE',
+        entityType: 'Donation',
+        entityId: donation.id,
+        newData: {
+          status: 'COMPLETED',
+          amount: amount / 100,
+          paymentMethod: method,
+          razorpayPaymentId,
+          razorpayOrderId: orderId,
+        },
+      })
     } else {
-      console.error(`Payment record not found for: ${paymentId}`)
+      console.error(`Donation not found for order: ${orderId}`)
     }
-
   } catch (error) {
     console.error('Error processing payment success webhook:', error)
   }
@@ -227,70 +208,55 @@ async function handlePaymentFailed(payload: WebhookPayload): Promise<void> {
     return
   }
 
-  const { id: paymentId, order_id: orderId, error_code, error_description } = paymentEntity
+  const { id: razorpayPaymentId, order_id: orderId, error_code, error_description } = paymentEntity
 
-  console.log(`Payment failed: ${paymentId}, Order: ${orderId}`)
+  console.log(`Payment failed: ${razorpayPaymentId}, Order: ${orderId}`)
 
   try {
-    const dbPayment = await prisma.payment.findFirst({
+    // Find the donation
+    const donation = await prisma.donation.findFirst({
       where: {
-        OR: [
-          { razorpayId: paymentId },
-          { orderId: orderId },
-        ],
+        paymentId: orderId,
       },
     })
 
-    if (dbPayment) {
-      await prisma.payment.update({
-        where: { id: dbPayment.id },
+    if (donation) {
+      // Create a failed payment attempt record
+      await prisma.donationPayment.create({
+        data: {
+          donationId: donation.id,
+          amount: 0,
+          currency: 'INR',
+          paymentMethod: 'BANK_TRANSFER',
+          status: 'FAILED',
+          errorMessage: error_description || error_code,
+        },
+      })
+
+      // Update donation status
+      await prisma.donation.update({
+        where: { id: donation.id },
         data: {
           status: 'FAILED',
         },
       })
 
-      // Update donation if exists
-      if (dbPayment.donationId) {
-        await prisma.donation.update({
-          where: { id: dbPayment.donationId },
-          data: {
-            status: 'FAILED',
-            failureReason: error_description,
-          },
-        })
-      }
-
-      // Update booking if exists
-      if (dbPayment.bookingId) {
-        await prisma.booking.update({
-          where: { id: dbPayment.bookingId },
-          data: {
-            status: 'PAYMENT_FAILED',
-            failureReason: error_description,
-          },
-        })
-      }
-
       // Log the failure
       await auditLogService.log({
         action: 'UPDATE',
-        entityType: 'Payment',
-        entityId: dbPayment.id,
+        entityType: 'Donation',
+        entityId: donation.id,
         newData: {
           status: 'FAILED',
           errorCode: error_code,
           errorDescription: error_description,
-        },
-        metadata: {
-          razorpayPaymentId: paymentId,
-          source: 'razorpay_webhook',
+          razorpayPaymentId,
+          razorpayOrderId: orderId,
         },
       })
-
     } else {
-      console.error(`Payment record not found for: ${paymentId}`)
+      console.error(`Donation not found for order: ${orderId}`)
     }
-
   } catch (error) {
     console.error('Error processing payment failure webhook:', error)
   }
@@ -307,37 +273,40 @@ async function handleRefundCreated(payload: WebhookPayload): Promise<void> {
     return
   }
 
-  const { id: refundId, payment_id: paymentId, amount, status } = refundEntity
+  const { id: refundId, payment_id: paymentId, amount } = refundEntity
 
   console.log(`Refund created: ${refundId}, Payment: ${paymentId}`)
 
   try {
-    await prisma.payment.update({
-      where: { razorpayId: paymentId },
-      data: {
-        refunded: true,
-        refundId,
-        refundAmount: amount / 100,
+    // Find the donation by payment ID
+    const donation = await prisma.donation.findFirst({
+      where: {
+        paymentId: paymentId,
       },
     })
 
-    // Log the refund
-    await auditLogService.log({
-      action: 'UPDATE',
-      entityType: 'Payment',
-      entityId: paymentId,
-      newData: {
-        refunded: true,
-        refundId,
-        refundAmount: amount / 100,
-        refundStatus: status,
-      },
-      metadata: {
-        razorpayRefundId: refundId,
-        source: 'razorpay_webhook',
-      },
-    })
+    if (donation) {
+      // Update donation status to REFUNDED
+      await prisma.donation.update({
+        where: { id: donation.id },
+        data: {
+          status: 'REFUNDED',
+        },
+      })
 
+      // Log the refund
+      await auditLogService.log({
+        action: 'UPDATE',
+        entityType: 'Donation',
+        entityId: donation.id,
+        newData: {
+          status: 'REFUNDED',
+          refundAmount: amount / 100,
+          razorpayRefundId: refundId,
+          razorpayPaymentId: paymentId,
+        },
+      })
+    }
   } catch (error) {
     console.error('Error processing refund created webhook:', error)
   }
@@ -359,29 +328,26 @@ async function handleRefundProcessed(payload: WebhookPayload): Promise<void> {
   console.log(`Refund processed: ${refundId}, Payment: ${paymentId}`)
 
   try {
-    // Update payment refund status
-    await prisma.payment.update({
-      where: { razorpayId: paymentId },
-      data: {
-        status: status === 'processed' ? 'REFUNDED' : 'PARTIALLY_REFUNDED',
+    // Find the donation
+    const donation = await prisma.donation.findFirst({
+      where: {
+        paymentId: paymentId,
       },
     })
 
-    // Log the refund completion
-    await auditLogService.log({
-      action: 'UPDATE',
-      entityType: 'Payment',
-      entityId: paymentId,
-      newData: {
-        status: status === 'processed' ? 'REFUNDED' : 'PARTIALLY_REFUNDED',
-        refundStatus: status,
-      },
-      metadata: {
-        razorpayRefundId: refundId,
-        source: 'razorpay_webhook',
-      },
-    })
-
+    if (donation) {
+      // Log the refund completion
+      await auditLogService.log({
+        action: 'UPDATE',
+        entityType: 'Donation',
+        entityId: donation.id,
+        newData: {
+          refundStatus: status,
+          razorpayRefundId: refundId,
+          razorpayPaymentId: paymentId,
+        },
+      })
+    }
   } catch (error) {
     console.error('Error processing refund processed webhook:', error)
   }

@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
 
       // Log the verification
       await auditLogService.log({
-        profileId: profile.id,
+        userId: user.id,
         action: 'EMAIL_VERIFIED',
         entityType: 'Profile',
         entityId: profile.id,
@@ -181,14 +181,13 @@ export async function POST(request: NextRequest) {
     const userAgent = request.headers.get('user-agent') || undefined
 
     await auditLogService.log({
-      profileId: adminProfile.id,
+      userId: user.id,
       action: 'EMAIL_VERIFIED',
       entityType: 'Profile',
       entityId: userId,
       newData: { emailVerified: true, manuallyVerified: true },
       ipAddress,
       userAgent,
-      metadata: { targetUserId: userId },
     })
 
     return NextResponse.json({ success: true })

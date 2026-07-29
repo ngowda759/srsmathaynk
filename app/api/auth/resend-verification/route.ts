@@ -59,9 +59,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check rate limiting (don't send too many verification emails)
-    // This is handled by Supabase's built-in rate limiting
-
     // Send the verification email
     const { error: sendError } = await supabase.auth.resend({
       type: 'signup',
@@ -76,16 +73,16 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Log the resend request (without capturing sensitive data)
+    // Log the resend request
     const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || undefined
     const userAgent = request.headers.get('user-agent') || undefined
 
     await auditLogService.log({
-      profileId: profile.id,
+      userId: user.id,
       action: 'ACCESS',
-      metadata: {
+      newData: {
         action: 'resend_verification_email',
-        email: user.email, // Only log the email address, not any tokens
+        email: user.email,
       },
       ipAddress,
       userAgent,
@@ -141,8 +138,6 @@ export async function GET(request: NextRequest) {
     })
 
     if (sendError) {
-      // Don't reveal if the email exists or not for security reasons
-      // Just log the error and return a generic message
       console.error('Error resending verification:', sendError)
     }
 

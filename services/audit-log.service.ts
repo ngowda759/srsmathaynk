@@ -3,6 +3,7 @@
  * Tracks all admin actions for security and compliance
  */
 import { prisma } from '@/lib/db'
+import { Prisma } from '@prisma/client'
 
 export type AuditAction =
   | 'CREATE'
@@ -39,20 +40,19 @@ export type EntityType =
 
 export interface AuditLogEntry {
   id: string
-  profileId: string | null
-  action: AuditAction
-  entityType: EntityType | null
+  userId: string | null
+  action: string
+  entityType: string | null
   entityId: string | null
-  oldData: Record<string, unknown> | null
-  newData: Record<string, unknown> | null
+  oldData: Prisma.JsonValue | null
+  newData: Prisma.JsonValue | null
   ipAddress: string | null
   userAgent: string | null
-  metadata: Record<string, unknown> | null
   createdAt: Date
 }
 
 export interface AuditLogFilter {
-  profileId?: string
+  userId?: string
   action?: AuditAction
   entityType?: EntityType
   entityId?: string
@@ -64,8 +64,8 @@ export interface AuditLogFilter {
 
 export interface AuditLogStats {
   totalActions: number
-  actionsByType: Record<AuditAction, number>
-  actionsByEntity: Record<EntityType, number>
+  actionsByType: Record<string, number>
+  actionsByEntity: Record<string, number>
   recentActivity: AuditLogEntry[]
 }
 
@@ -74,7 +74,7 @@ class AuditLogService {
    * Create an audit log entry
    */
   async log(params: {
-    profileId?: string
+    userId?: string
     action: AuditAction
     entityType?: EntityType
     entityId?: string
@@ -82,19 +82,17 @@ class AuditLogService {
     newData?: Record<string, unknown>
     ipAddress?: string
     userAgent?: string
-    metadata?: Record<string, unknown>
   }): Promise<AuditLogEntry> {
     const entry = await prisma.auditLog.create({
       data: {
-        profileId: params.profileId,
+        userId: params.userId,
         action: params.action,
         entityType: params.entityType,
         entityId: params.entityId,
-        oldData: params.oldData,
-        newData: params.newData,
+        oldData: params.oldData ? params.oldData as Prisma.InputJsonValue : undefined,
+        newData: params.newData ? params.newData as Prisma.InputJsonValue : undefined,
         ipAddress: params.ipAddress,
         userAgent: params.userAgent,
-        metadata: params.metadata,
       },
     })
 
@@ -105,16 +103,16 @@ class AuditLogService {
    * Log a login attempt
    */
   async logLogin(params: {
-    profileId: string
+    userId: string
     success: boolean
     ipAddress?: string
     userAgent?: string
     failureReason?: string
   }): Promise<AuditLogEntry> {
     return this.log({
-      profileId: params.profileId,
+      userId: params.userId,
       action: params.success ? 'LOGIN' : 'LOGIN_FAILED',
-      metadata: params.success ? undefined : { failureReason: params.failureReason },
+      newData: params.success ? undefined : { failureReason: params.failureReason },
       ipAddress: params.ipAddress,
       userAgent: params.userAgent,
     })
@@ -124,14 +122,14 @@ class AuditLogService {
    * Log a profile update
    */
   async logProfileUpdate(params: {
-    profileId: string
+    userId: string
     oldData: Record<string, unknown>
     newData: Record<string, unknown>
     ipAddress?: string
     userAgent?: string
   }): Promise<AuditLogEntry> {
     return this.log({
-      profileId: params.profileId,
+      userId: params.userId,
       action: 'UPDATE',
       entityType: 'Profile',
       oldData: params.oldData,
@@ -145,7 +143,7 @@ class AuditLogService {
    * Log a role change
    */
   async logRoleChange(params: {
-    profileId: string
+    userId: string
     targetProfileId: string
     oldRole: string
     newRole: string
@@ -154,7 +152,7 @@ class AuditLogService {
     userAgent?: string
   }): Promise<AuditLogEntry> {
     return this.log({
-      profileId: params.changedBy,
+      userId: params.changedBy,
       action: 'ROLE_CHANGED',
       entityType: 'UserRole',
       entityId: params.targetProfileId,
@@ -162,7 +160,6 @@ class AuditLogService {
       newData: { role: params.newRole },
       ipAddress: params.ipAddress,
       userAgent: params.userAgent,
-      metadata: { targetProfileId: params.targetProfileId },
     })
   }
 
@@ -170,16 +167,16 @@ class AuditLogService {
    * Log an access denied event
    */
   async logAccessDenied(params: {
-    profileId: string
+    userId: string
     resource: string
     requiredPermission?: string
     ipAddress?: string
     userAgent?: string
   }): Promise<AuditLogEntry> {
     return this.log({
-      profileId: params.profileId,
+      userId: params.userId,
       action: 'PERMISSION_DENIED',
-      metadata: {
+      newData: {
         resource: params.resource,
         requiredPermission: params.requiredPermission,
       },
@@ -197,8 +194,8 @@ class AuditLogService {
   }> {
     const where: Record<string, unknown> = {}
 
-    if (filter.profileId) {
-      where.profileId = filter.profileId
+    if (filter.userId) {
+      where.userId = filter.userId
     }
 
     if (filter.action) {
@@ -233,20 +230,21 @@ class AuditLogService {
       prisma.auditLog.count({ where }),
     ])
 
-    return { entries, total }
+    return { entries: entries as AuditLogEntry[], total }
   }
 
   /**
    * Get audit logs for a specific entity
    */
   async getEntityHistory(entityType: EntityType, entityId: string): Promise<AuditLogEntry[]> {
-    return prisma.auditLog.findMany({
+    const entries = await prisma.auditLog.findMany({
       where: {
         entityType,
         entityId,
       },
       orderBy: { createdAt: 'desc' },
     })
+    return entries as AuditLogEntry[]
   }
 
   /**
@@ -274,48 +272,13 @@ class AuditLogService {
       }),
     ])
 
-    // Group by action type
-    const actionsByType: Record<AuditAction, number> = {
-      CREATE: 0,
-      UPDATE: 0,
-      DELETE: 0,
-      LOGIN: 0,
-      LOGOUT: 0,
-      LOGIN_FAILED: 0,
-      PASSWORD_RESET: 0,
-      EMAIL_VERIFIED: 0,
-      ROLE_CHANGED: 0,
-      PERMISSION_DENIED: 0,
-      ACCESS: 0,
-    }
-
-    const actionsByEntity: Record<EntityType, number> = {
-      Profile: 0,
-      UserRole: 0,
-      Role: 0,
-      Event: 0,
-      Seva: 0,
-      Donation: 0,
-      Booking: 0,
-      Gallery: 0,
-      GalleryItem: 0,
-      Album: 0,
-      Announcement: 0,
-      Document: 0,
-      KnowledgeArticle: 0,
-      ChatSession: 0,
-      ChatMessage: 0,
-      Settings: 0,
-      Payment: 0,
-      Receipt: 0,
-    }
+    const actionsByType: Record<string, number> = {}
+    const actionsByEntity: Record<string, number> = {}
 
     for (const entry of allActions) {
-      if (entry.action in actionsByType) {
-        actionsByType[entry.action as AuditAction]++
-      }
-      if (entry.entityType && entry.entityType in actionsByEntity) {
-        actionsByEntity[entry.entityType as EntityType]++
+      actionsByType[entry.action] = (actionsByType[entry.action] || 0) + 1
+      if (entry.entityType) {
+        actionsByEntity[entry.entityType] = (actionsByEntity[entry.entityType] || 0) + 1
       }
     }
 
@@ -323,30 +286,8 @@ class AuditLogService {
       totalActions,
       actionsByType,
       actionsByEntity,
-      recentActivity: allActions.slice(0, 10),
+      recentActivity: (allActions.slice(0, 10)) as AuditLogEntry[],
     }
-  }
-
-  /**
-   * Search audit logs by metadata
-   */
-  async searchByMetadata(
-    key: string,
-    value: unknown,
-    limit: number = 50
-  ): Promise<AuditLogEntry[]> {
-    const entries = await prisma.auditLog.findMany({
-      where: {
-        metadata: {
-          path: [key],
-          equals: value,
-        },
-      },
-      orderBy: { createdAt: 'desc' },
-      take: limit,
-    })
-
-    return entries
   }
 
   /**
@@ -358,7 +299,7 @@ class AuditLogService {
   ): Promise<AuditLogEntry[]> {
     const since = new Date(Date.now() - hours * 60 * 60 * 1000)
 
-    return prisma.auditLog.findMany({
+    const entries = await prisma.auditLog.findMany({
       where: {
         action: 'LOGIN_FAILED',
         createdAt: { gte: since },
@@ -366,6 +307,7 @@ class AuditLogService {
       orderBy: { createdAt: 'desc' },
       take: limit,
     })
+    return entries as AuditLogEntry[]
   }
 }
 
