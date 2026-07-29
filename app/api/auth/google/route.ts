@@ -92,7 +92,7 @@ export async function GET(request: NextRequest) {
           emailVerified: true, // Google accounts are pre-verified
           isActive: true,
         },
-      })
+      })!
 
       // Assign DEVOTEE role
       const devoteeRole = await prisma.role.findUnique({
