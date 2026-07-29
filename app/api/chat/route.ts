@@ -1,31 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAIProvider } from "@/lib/ai/provider";
-import { getSystemPrompt } from "@/lib/ai/settings";
-import { AIMessage, ChatRequest, ChatResponse } from "@/types/ai";
-
+import { SYSTEM_PROMPT } from "@/lib/ai/systemPrompt";
+import { hybridRetrieval, detectLanguage } from "@/lib/ai/retrieval";
+import { 
+  sanitizeInput, 
+  checkForInjection, 
+  logSuspiciousActivity, 
+  validateHistory,
+  checkRateLimit,
+  createContextAddition 
+} from "@/lib/ai/security";
+import { chatSessionService } from "@/services/chat-session.service";
+import type { AIMessage, ChatRequest, ChatResponse } from "@/types/ai";
+import type { SourceMetadata } from "@/lib/ai/retrieval/types";
 
 export const dynamic = "force-dynamic";
-// Rate limiting (simple in-memory implementation)
-const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
-const RATE_LIMIT = 20; // requests per minute
-const RATE_WINDOW = 60 * 1000; // 1 minute in milliseconds
-
-function checkRateLimit(ip: string): boolean {
-  const now = Date.now();
-  const record = rateLimitMap.get(ip);
-
-  if (!record || now > record.resetTime) {
-    rateLimitMap.set(ip, { count: 1, resetTime: now + RATE_WINDOW });
-    return true;
-  }
-
-  if (record.count >= RATE_LIMIT) {
-    return false;
-  }
-
-  record.count++;
-  return true;
-}
 
 // Enhanced error logging helper
 function logError(context: string, error: unknown, details?: Record<string, unknown>): void {
@@ -46,18 +35,20 @@ export async function POST(request: NextRequest) {
   const requestId = crypto.randomUUID();
 
   try {
-    // Get client IP for rate limiting
+    // Get client info
     const ip = request.headers.get("x-forwarded-for") || 
                request.headers.get("x-real-ip") || 
                "unknown";
+    const userAgent = request.headers.get("user-agent") || undefined;
 
     console.log(`[Chat API] [${requestId}] Received request from IP: ${ip}`);
 
     // Check rate limit
-    if (!checkRateLimit(ip)) {
+    const rateLimit = checkRateLimit(ip);
+    if (!rateLimit.allowed) {
       console.log(`[Chat API] [${requestId}] Rate limit exceeded for IP: ${ip}`);
       return NextResponse.json(
-        { error: "Too many requests. Please wait a moment and try again." },
+        { error: "Too many requests. Please wait a moment and try again.", retryAfter: rateLimit.resetIn },
         { status: 429 }
       );
     }
@@ -74,11 +65,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { messages, sessionId } = body;
+    const { messages, sessionId, userId } = body;
 
     // Validate messages
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
-      console.log(`[Chat API] [${requestId}] Invalid messages:`, { hasMessages: !!messages, isArray: Array.isArray(messages), length: messages?.length });
       return NextResponse.json(
         { error: "Messages are required and must be a non-empty array" },
         { status: 400 }
@@ -88,68 +78,199 @@ export async function POST(request: NextRequest) {
     // Get the last user message
     const lastUserMessage = [...messages].reverse().find((m) => m.role === "user");
     if (!lastUserMessage) {
-      console.log(`[Chat API] [${requestId}] No user message found in messages`);
       return NextResponse.json(
         { error: "No user message found" },
         { status: 400 }
       );
     }
 
-    console.log(`[Chat API] [${requestId}] Processing message: "${lastUserMessage.content.substring(0, 50)}..."`);
+    // Sanitize user input
+    const sanitization = sanitizeInput(lastUserMessage.content);
+    if (!sanitization.isValid) {
+      return NextResponse.json(
+        { error: "Invalid message content" },
+        { status: 400 }
+      );
+    }
 
-    // Try AI provider first, fallback to Firebase
-    const provider = getAIProvider();
-    let responseMessage: AIMessage;
-    const responseSource = "ai" as const;
+    // Check for injection attempts
+    const injectionCheck = checkForInjection(sanitization.sanitized);
+    if (injectionCheck.isInjection) {
+      logSuspiciousActivity("prompt_injection", {
+        input: sanitization.sanitized,
+        ip,
+        sessionId,
+        confidence: injectionCheck.confidence,
+      });
+      console.warn(`[Chat API] [${requestId}] Injection attempt detected from IP: ${ip}`);
+      return NextResponse.json(
+        { error: "Your message could not be processed. Please try a different question." },
+        { status: 400 }
+      );
+    }
 
-    if (provider.isConfigured()) {
-      // Use AI provider with configurable system prompt
-      console.log(`[Chat API] [${requestId}] Using AI provider: ${provider.getProviderName()} (model: ${provider.getModelName()})`);
+    // Log suspicious activity if detected
+    if (sanitization.isSuspicious) {
+      logSuspiciousActivity("suspicious_input", {
+        input: sanitization.sanitized,
+        ip,
+        sessionId,
+      });
+    }
 
-      try {
-        const aiMessages: AIMessage[] = messages.map((msg) => ({
-          id: msg.id || crypto.randomUUID(),
-          role: msg.role as "user" | "assistant",
-          content: msg.content,
-          timestamp: msg.timestamp || Date.now(),
-        }));
+    console.log(`[Chat API] [${requestId}] Processing message: "${sanitization.sanitized.substring(0, 50)}..."`);
 
-        // Get system prompt from Firebase (or defaults)
-        const systemPrompt = await getSystemPrompt();
-        console.log(`[Chat API] [${requestId}] System prompt length: ${systemPrompt.length} chars`);
+    // Detect language
+    const detectedLanguage = detectLanguage(sanitization.sanitized);
 
-        const responseContent = await provider.generateResponse(aiMessages, systemPrompt);
-        const latency = Date.now() - startTime;
+    // Validate and truncate history
+    const validatedHistory = validateHistory(messages.map(m => ({ role: m.role, content: m.content })));
 
-        console.log(`[Chat API] [${requestId}] AI response generated in ${latency}ms (${responseContent.length} chars)`);
-
-        responseMessage = {
-          id: crypto.randomUUID(),
-          role: "assistant",
-          content: responseContent,
-          timestamp: Date.now(),
-          model: provider.getModelName(),
-          latency,
-        };
-      } catch (aiError) {
-        // AI call failed
-        logError("AI provider call", aiError, { requestId, provider: provider.getProviderName() });
-        console.log(`[Chat API] [${requestId}] AI provider failed`);
-        throw aiError;
+    // Get or create session
+    let currentSessionId = sessionId;
+    if (currentSessionId) {
+      // Verify session exists
+      const session = await chatSessionService.getSessionByKey(currentSessionId);
+      if (!session) {
+        currentSessionId = crypto.randomUUID();
+        await chatSessionService.createSession({
+          sessionKey: currentSessionId,
+          userId,
+          userIp: ip,
+          userAgent,
+          language: detectedLanguage,
+        });
       }
     } else {
-      // AI not configured
-      console.log(`[Chat API] [${requestId}] AI not configured`);
+      currentSessionId = crypto.randomUUID();
+      await chatSessionService.createSession({
+        sessionKey: currentSessionId,
+        userId,
+        userIp: ip,
+        userAgent,
+        language: detectedLanguage,
+      });
+    }
+
+    // Hybrid retrieval for context
+    const retrievalStart = Date.now();
+    const retrievalResult = await hybridRetrieval(
+      { query: sanitization.sanitized, language: detectedLanguage },
+      { maxResults: 5 }
+    );
+    const retrievalTime = Date.now() - retrievalStart;
+
+    console.log(`[Chat API] [${requestId}] Retrieval found ${retrievalResult.sources.length} sources in ${retrievalTime}ms, confidence: ${retrievalResult.confidence}`);
+
+    // Get AI provider
+    const provider = getAIProvider();
+
+    if (!provider.isConfigured()) {
       throw new Error("AI service not configured. Please set up AI provider credentials.");
     }
 
-    const totalLatency = Date.now() - startTime;
-    console.log(`[Chat API] [${requestId}] Total request time: ${totalLatency}ms (source: ${responseSource})`);
+    // Build enhanced system prompt with retrieved context
+    let systemPrompt = SYSTEM_PROMPT;
+    
+    if (retrievalResult.sources.length > 0) {
+      const contextAddition = createContextAddition({
+        language: detectedLanguage,
+        intent: retrievalResult.intent,
+        sources: retrievalResult.sources.map(s => ({ type: s.type, title: s.title })),
+      });
+      systemPrompt += `\n\n${retrievalResult.content}${contextAddition}`;
+    }
 
-    const response: ChatResponse = {
-      message: responseMessage,
-      sessionId: sessionId || crypto.randomUUID(),
+    // Add language instruction
+    if (detectedLanguage === 'kn') {
+      systemPrompt += "\n\nIMPORTANT: The user is communicating in Kannada. Respond entirely in proper Kannada script (ಕನ್ನಡ ಅಕ್ಷರಗಳನ್ನು ಬಳಸಿ).";
+    } else if (detectedLanguage === 'mixed') {
+      systemPrompt += "\n\nThe user is mixing languages. Respond naturally in both English and Kannada as appropriate.";
+    }
+
+    // Generate response
+    const aiStart = Date.now();
+    const aiMessages: AIMessage[] = validatedHistory.truncated.map((msg) => ({
+      id: crypto.randomUUID(),
+      role: msg.role as "user" | "assistant",
+      content: msg.content,
+      timestamp: Date.now(),
+    }));
+
+    const responseContent = await provider.generateResponse(aiMessages, systemPrompt);
+    const aiLatency = Date.now() - aiStart;
+    const totalLatency = Date.now() - startTime;
+
+    console.log(`[Chat API] [${requestId}] AI response generated in ${aiLatency}ms, total: ${totalLatency}ms`);
+
+    // Save messages to session
+    try {
+      // Save user message
+      await chatSessionService.saveMessage({
+        sessionId: currentSessionId,
+        role: 'user',
+        content: sanitization.sanitized,
+        detectedLang: detectedLanguage,
+        detectedIntent: retrievalResult.intent,
+      });
+
+      // Save assistant response
+      const sources = retrievalResult.sources.length > 0 
+        ? retrievalResult.sources 
+        : undefined;
+
+      await chatSessionService.saveMessage({
+        sessionId: currentSessionId,
+        role: 'assistant',
+        content: responseContent,
+        model: provider.getModelName(),
+        latency: aiLatency,
+        confidence: retrievalResult.confidence,
+        sources,
+        detectedLang: detectedLanguage,
+      });
+    } catch (dbError) {
+      // Don't fail the request if DB save fails
+      console.error(`[Chat API] [${requestId}] Failed to save messages:`, dbError);
+    }
+
+    // Log unknown questions if confidence is low
+    if (retrievalResult.confidence < 0.3 && retrievalResult.sources.length === 0) {
+      try {
+        await chatSessionService.logUnknownQuestion({
+          sessionId: currentSessionId,
+          question: sanitization.sanitized,
+          language: detectedLanguage,
+          intent: retrievalResult.intent,
+          topic: retrievalResult.topic,
+          userId,
+          userIp: ip,
+        });
+        console.log(`[Chat API] [${requestId}] Low confidence - logged unknown question`);
+      } catch (logError) {
+        console.error(`[Chat API] [${requestId}] Failed to log unknown question:`, logError);
+      }
+    }
+
+    const responseMessage: AIMessage = {
+      id: crypto.randomUUID(),
+      role: "assistant",
+      content: responseContent,
+      timestamp: Date.now(),
+      model: provider.getModelName(),
+      latency: totalLatency,
+      detectedLanguage,
     };
+
+    const response: ChatResponse & { sources?: SourceMetadata[] } = {
+      message: responseMessage,
+      sessionId: currentSessionId,
+    };
+
+    // Include sources if available
+    if (retrievalResult.sources.length > 0) {
+      response.sources = retrievalResult.sources;
+    }
 
     return NextResponse.json(response);
   } catch (error) {
@@ -206,5 +327,11 @@ export async function GET() {
     configured: provider.isConfigured(),
     model: provider.getModelName(),
     timestamp: Date.now(),
+    features: {
+      hybridRetrieval: true,
+      sessionManagement: true,
+      injectionProtection: true,
+      multiLanguage: true,
+    },
   });
 }

@@ -46,6 +46,8 @@ model Profile {
   testimonial   Testimonial?
   chatFeedback  ChatFeedback[]
   userRoles     UserRole[]
+  chatSessions  ChatSession[]
+  aiFeedbacks   AIFeedback[]
 
   @@index([email])
   @@index([isActive])
@@ -1676,4 +1678,172 @@ enum AlbumVisibility {
 enum GalleryItemType {
   PHOTO
   VIDEO
+}
+
+// =============================================================================
+// RAYA AI CHAT SESSIONS (Sprint 5.1)
+// =============================================================================
+
+/// Chat Session - manages conversation contexts
+model ChatSession {
+  id String @id @default(uuid())
+
+  // Session identifier (for client-side correlation)
+  sessionKey String @unique
+
+  // User info (nullable for anonymous)
+  userId   String?
+  userIp   String?
+  userAgent String?
+
+  // Language preference
+  language String @default("en") // "en", "kn", "mixed"
+
+  // Conversation stats
+  messageCount Int @default(0)
+
+  // Context tracking
+  lastIntent String? // e.g., "donation_inquiry", "timings_inquiry"
+  lastTopic  String?
+
+  // Feedback aggregated
+  helpfulCount    Int @default(0)
+  notHelpfulCount Int @default(0)
+
+  // Status
+  isActive Boolean @default(true)
+
+  // Audit fields
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  lastActivityAt DateTime @default(now())
+
+  // Relations
+  user     Profile?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  messages ChatMessage[]
+  feedbacks AIFeedback[]
+
+  @@index([userId])
+  @@index([language])
+  @@index([isActive])
+  @@index([lastActivityAt])
+  @@map("chat_sessions")
+}
+
+/// Individual chat message
+model ChatMessage {
+  id String @id @default(uuid())
+
+  sessionId String
+  session   ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  // Message content
+  role  String // "user", "assistant", "system"
+  content String @db.Text
+
+  // Bilingual support
+  contentKn String? @db.Text // Kannada translation if available
+
+  // AI metadata
+  model     String? // e.g., "gpt-4o-mini"
+  latency   Int?    // Response time in milliseconds
+  tokens    Int?    // Token count
+
+  // Confidence scoring (0.0 - 1.0)
+  confidence Float?
+
+  // Sources used to generate this response
+  sources Json? // Array of { type, id, title, url }
+
+  // Language detection
+  detectedLang String?
+
+  // Intent detected from user message
+  detectedIntent String?
+
+  // Whether this was flagged as a follow-up
+  isFollowUp Boolean @default(false)
+  parentMessageId String? // Reference to parent message
+
+  // Audit
+  createdAt DateTime @default(now())
+
+  // Relations
+  feedbacks AIFeedback[]
+
+  @@index([sessionId])
+  @@index([role])
+  @@index([createdAt])
+  @@map("chat_messages")
+}
+
+/// AI Chat Feedback - user satisfaction tracking for AI conversations
+model AIFeedback {
+  id String @id @default(uuid())
+
+  sessionId  String
+  session    ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  messageId  String?
+  message    ChatMessage? @relation(fields: [messageId], references: [id], onDelete: SetNull)
+
+  // Feedback
+  isHelpful  Boolean
+  rating     Int?         // 1-5 stars
+  comment    String?      @db.Text
+
+  // Context for the feedback
+  userQuery  String?      @db.Text
+  aiResponse String?      @db.Text
+
+  // User info
+  userId     String?
+  user       Profile?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  // Audit
+  createdAt DateTime @default(now())
+
+  @@index([sessionId])
+  @@index([isHelpful])
+  @@index([createdAt])
+  @@map("ai_feedback")
+}
+
+/// Unknown Questions - for admin review and knowledge base improvement
+model UnknownQuestion {
+  id String @id @default(uuid())
+
+  // Question details
+  sessionId  String?
+  question   String      @db.Text
+  questionKn String?     @db.Text // Kannada version
+
+  // Language
+  language   String @default("en")
+
+  // Context
+  intent     String? // Detected intent
+  topic      String?
+  context    Json?   // Previous conversation context
+
+  // Resolution status
+  status     String @default("pending") // pending, reviewed, answered, skipped
+  reviewedBy String?
+  reviewedAt DateTime?
+  suggestedAnswer String? @db.Text
+  answeredCount   Int @default(0)
+
+  // User info
+  userId     String?
+  userIp     String?
+
+  // Audit
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([language])
+  @@index([createdAt])
+  @@index([reviewedBy])
+  @@map("unknown_questions")
 }
