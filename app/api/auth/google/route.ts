@@ -45,14 +45,7 @@ export async function GET(request: NextRequest) {
           getAll() {
             return request.cookies.getAll()
           },
-          setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value, options }) => {
-              request.cookies.set(name, value)
-            })
-            return NextResponse.next({
-              request: { headers: request.headers },
-            })
-          },
+          setAll() {},
         },
       }
     )
@@ -81,14 +74,12 @@ export async function GET(request: NextRequest) {
       // Create new profile for Google user
       const metadata = user.user_metadata as Record<string, unknown>
       const fullName = (metadata?.full_name || metadata?.name) as string | undefined
-      const avatarUrl = metadata?.avatar_url as string | undefined
 
       profile = await prisma.profile.create({
         data: {
           userId: user.id,
           email: user.email!,
           name: fullName || null,
-          avatarUrl: avatarUrl || null,
           emailVerified: true, // Google accounts are pre-verified
           isActive: true,
         },
