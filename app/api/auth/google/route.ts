@@ -65,7 +65,7 @@ export async function GET(request: NextRequest) {
     const userAgent = request.headers.get('user-agent') || undefined
 
     // Check if profile exists
-    let profile = await prisma.profile.findUnique({
+    const profile = await prisma.profile.findUnique({
       where: { userId: user.id },
       include: { userRoles: { include: { role: true } } },
     })
