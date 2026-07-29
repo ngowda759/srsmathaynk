@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * Security E2E Tests
  * OWASP Top 10, XSS, CSRF, Rate Limiting

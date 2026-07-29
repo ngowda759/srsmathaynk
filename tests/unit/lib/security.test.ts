@@ -1,7 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * Unit Tests for Security Utilities
  * Coverage target: >90%
  */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect } from 'vitest'
 import {
   sanitizeString,
