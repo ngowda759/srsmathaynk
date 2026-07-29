@@ -30,6 +30,8 @@ const eslintConfig = defineConfig([
       "data/**/*.ts",
       "src/**/*.ts",
       "src/**/*.tsx",
+      "tests/**/*.ts",
+      "tests/**/*.tsx",
     ],
     rules: {
       "@typescript-eslint/no-explicit-any": "off",
