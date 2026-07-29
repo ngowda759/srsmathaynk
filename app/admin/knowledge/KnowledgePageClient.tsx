@@ -126,10 +126,10 @@ export default function KnowledgePageClient({
                     <p className="font-medium">{article.title}</p>
                     <p className="text-sm text-stone-500">
                       {article.titleKn && <span className="mr-2">{article.titleKn}</span>}
-                      {article.categoryName && (
+                      {article.category?.name && (
                         <span className="mr-2">
                           · <Tag className="inline h-3 w-3 mr-1" />
-                          {article.categoryName}
+                          {article.category?.name}
                         </span>
                       )}
                     </p>
