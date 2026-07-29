@@ -1451,6 +1451,27 @@ enum EnquiryStatus {
 // UTILITY MODELS
 // =============================================================================
 
+/// User Notifications
+model Notification {
+  id      String @id @default(uuid())
+  userId  String
+
+  type    String
+  title   String
+  message String
+  data    String? @db.Text // JSON string for additional data
+
+  read     Boolean @default(false)
+  channel  String  @default("IN_APP") // IN_APP, EMAIL, PUSH
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([userId, read])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
 /// Audit Log
 model AuditLog {
   id String @id @default(uuid())
