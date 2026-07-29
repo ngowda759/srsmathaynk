@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * Accessibility E2E Tests (WCAG 2.1 AA)
  */
