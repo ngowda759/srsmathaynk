@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -63,27 +63,36 @@ export default function AdminAuthGuard({
   const searchParams = useSearchParams();
   const { user, loading, canAccessAdmin } = useAuth();
   const [isClient, setIsClient] = useState(false);
+  const hasRedirected = useRef(false);
 
   useEffect(() => {
-    // Use setTimeout to avoid synchronous state update during effect
     const timer = setTimeout(() => {
       setIsClient(true);
     }, 0);
     return () => clearTimeout(timer);
   }, []);
 
-  // Show loading while checking auth
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!loading && isClient && !user && !hasRedirected.current) {
+      hasRedirected.current = true;
+      const redirect = searchParams.get("redirect") || "/admin";
+      // Use setTimeout to defer navigation after render completes
+      setTimeout(() => {
+        router.replace(`/login?redirect=${encodeURIComponent(redirect)}`);
+      }, 0);
+    }
+  }, [loading, isClient, user, searchParams, router]);
+
+  // Show loading while checking auth or if about to redirect
   if (loading || !isClient) {
     return <LoadingSpinner />;
   }
 
   // Firebase has been removed - skip Firebase config check
 
-  // Check if user is logged in
+  // Check if user is logged in (already redirected if not)
   if (!user) {
-    // Redirect to login with the return URL
-    const redirect = searchParams.get("redirect") || "/admin";
-    router.replace(`/login?redirect=${encodeURIComponent(redirect)}`);
     return <LoadingSpinner />;
   }
 
