@@ -2,12 +2,11 @@
 
 export default function ClientEnvDebug() {
   const vars = {
-    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "NOT SET",
-    authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "NOT SET",
-    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "NOT SET",
-    storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "NOT SET",
-    messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "NOT SET",
-    appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "NOT SET",
+    supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL || "NOT SET",
+    supabaseAnonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY 
+      ? "CONFIGURED (key hidden for security)" 
+      : "NOT SET",
+    nodeEnv: process.env.NODE_ENV || "NOT SET",
   };
 
   return (

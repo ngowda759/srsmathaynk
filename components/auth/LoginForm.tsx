@@ -43,7 +43,6 @@ export default function LoginForm() {
   }, []);
 
   // If user is already logged in, redirect to home (middleware will handle admin redirect)
-  // Only redirect if Firebase is configured and user is logged in
   useEffect(() => {
     if (!loading && isClient && user) {
       // User is logged in - redirect to home page
@@ -62,34 +61,35 @@ export default function LoginForm() {
 
   async function onSubmit(data: LoginFormValues) {
     try {
-      await login(data.email, data.password);
-      toast.success("Welcome back!");
-      // Use setTimeout to defer window.location modification
-      setTimeout(() => {
-        window.location.href = "/admin";
-      }, 0);
+      const result = await login(data.email, data.password);
+      if (result.success) {
+        toast.success("Welcome back!");
+        // Use setTimeout to defer window.location modification
+        setTimeout(() => {
+          window.location.href = "/admin";
+        }, 0);
+      } else {
+        // Handle Supabase-specific error messages
+        const errorMessage = result.error?.toLowerCase() || "";
+        
+        if (errorMessage.includes("invalid login credentials") || 
+            errorMessage.includes("invalid email or password") ||
+            errorMessage.includes("wrong password")) {
+          toast.error("Invalid email or password.");
+        } else if (errorMessage.includes("user not found")) {
+          toast.error("No account found with this email.");
+        } else if (errorMessage.includes("email not confirmed") ||
+                   errorMessage.includes("not confirmed")) {
+          toast.error("Please verify your email address first.");
+        } else if (errorMessage.includes("too many requests")) {
+          toast.error("Too many login attempts. Please try again later.");
+        } else {
+          toast.error(result.error || "Login failed. Please try again.");
+        }
+      }
     } catch (error: unknown) {
       const err = error as { code?: string; message?: string };
-      switch (err.code) {
-        case "auth/invalid-credential":
-          toast.error("Invalid email or password.");
-          break;
-
-        case "auth/user-not-found":
-          toast.error("No account found.");
-          break;
-
-        case "auth/wrong-password":
-          toast.error("Incorrect password.");
-          break;
-
-        case "auth/too-many-requests":
-          toast.error("Too many login attempts.");
-          break;
-
-        default:
-          toast.error(err.message || "Login failed.");
-      }
+      toast.error(err.message || "An unexpected error occurred.");
     }
   }
 

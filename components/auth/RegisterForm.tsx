@@ -50,28 +50,40 @@ export default function RegisterForm() {
 
   async function onSubmit(data: RegisterFormValues) {
     try {
-      await registerUser({
+      const result = await registerUser({
         name: data.name,
         email: data.email,
         phone: data.phone,
         password: data.password,
       });
 
-      toast.success(
-        "Account created. Please verify your email and sign in."
-      );
-      router.push("/login");
-    } catch (error: any) {
-      switch (error.code) {
-        case "auth/email-already-in-use":
-          toast.error("This email is already registered.");
-          break;
-        case "auth/weak-password":
-          toast.error("Please choose a stronger password.");
-          break;
-        default:
-          toast.error(error.message || "Registration failed.");
+      if (result.success) {
+        toast.success(
+          "Account created. Please verify your email and sign in."
+        );
+        router.push("/login");
+      } else {
+        // Handle Supabase-specific error messages
+        const errorMessage = result.error?.toLowerCase() || "";
+        
+        if (errorMessage.includes("user already registered") ||
+            errorMessage.includes("already exists") ||
+            errorMessage.includes("email already")) {
+          toast.error("This email is already registered. Please sign in instead.");
+        } else if (errorMessage.includes("weak password") ||
+                   errorMessage.includes("password")) {
+          toast.error("Please choose a stronger password (at least 6 characters).");
+        } else if (errorMessage.includes("invalid email")) {
+          toast.error("Please enter a valid email address.");
+        } else if (errorMessage.includes("rate limit")) {
+          toast.error("Too many registration attempts. Please try again later.");
+        } else {
+          toast.error(result.error || "Registration failed. Please try again.");
+        }
       }
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      toast.error(err.message || "An unexpected error occurred.");
     }
   }
 
