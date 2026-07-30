@@ -1,5 +1,5 @@
 /**
- * Dashboard Service (Client) - Firebase has been removed
+ * Dashboard Service (Client) - Prisma-based implementation
  * This service now returns zero counts as no backend is available
  */
 
@@ -7,7 +7,7 @@ import { DashboardStats } from "@/types/dashboard";
 
 class DashboardService {
   async getStats(): Promise<DashboardStats> {
-    console.log("[DashboardService] Firebase removed - returning zero counts");
+    console.log("[DashboardService] DB unavailable - returning zero counts");
     return {
       totalUsers: 0,
       totalEvents: 0,

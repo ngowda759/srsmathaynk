@@ -14,7 +14,7 @@ export interface AIMessage {
 
 export interface ChatSession {
   id: string;
-  userId: string | null; // Firebase UID or anonymous
+  userId: string | null; // User ID or anonymous
   createdAt: number;
   updatedAt: number;
   messageCount: number;

@@ -1,11 +1,11 @@
 /**
  * Seed Future Plans Script
  * 
- * Firebase has been removed from this project.
+ * Prisma-based implementation
  * This script is kept for reference but will not work.
  */
 
-console.log('❌ Firebase has been removed from this project.');
+console.log('❌ Prisma-based implementation');
 console.log('\n📋 This script is no longer functional.');
 console.log('\n🔄 For Sprint 1, data seeding will be managed through Supabase.');
 

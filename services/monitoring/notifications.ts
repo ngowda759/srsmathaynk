@@ -230,7 +230,7 @@ export async function sendPushNotification(
 ): Promise<NotificationResult> {
   const timestamp = new Date();
   
-  // In a real implementation, this would use Firebase Cloud Messaging or similar
+  // In a real implementation, this would use Supabase Edge Functions or similar or similar
   try {
     console.log("Push notification sent:", { to: deviceToken, alert: alert.title });
     

@@ -12,8 +12,8 @@ Raya AI is the custom-built AI assistant for Sri Raghavendra Swamy Math, Yelahan
 - Implemented AI provider abstraction (OpenAI, Gemini, Claude, OpenRouter)
 - Created system prompt and knowledge base
 
-### Milestone 2: Firebase Integration & Sessions
-- Integrated Firebase Firestore for message storage
+### Milestone 2: Supabase Integration & Sessions
+- Integrated Supabase for message storage
 - Added chat session management
 - Support for anonymous and authenticated users
 - Session history tracking
@@ -63,7 +63,7 @@ Raya AI is the custom-built AI assistant for Sri Raghavendra Swamy Math, Yelahan
                                 │
                                 ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                        Firebase                                  │
+│                     Supabase Database                            │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────────────┐   │
 │  │chat_sessions │  │  messages    │  │    testimonials     │   │
 │  └──────────────┘  └──────────────┘  └──────────────────────┘   │
@@ -103,7 +103,7 @@ OPENROUTER_MODEL=openai/gpt-4o-mini
 ```typescript
 {
   id: string;
-  userId: string | null;  // Firebase UID or null for anonymous
+  userId: string | null;  // Supabase User ID or null for anonymous
   createdAt: Timestamp;
   updatedAt: Timestamp;
   messageCount: number;
@@ -178,7 +178,7 @@ Send a message and receive AI response.
     { "id": "1", "role": "user", "content": "Hello", "timestamp": 1234567890 }
   ],
   "sessionId": "optional-session-id",
-  "userId": "optional-firebase-uid"
+  "userId": "optional-user-id"
 }
 ```
 
@@ -248,7 +248,7 @@ components/ai/
 - [x] Welcome screen
 - [x] Suggested questions
 - [x] Anonymous user sessions
-- [x] Firebase integration
+- [x] Supabase integration
 - [x] Multiple AI provider support
 
 ## Future Improvements
@@ -273,6 +273,6 @@ components/ai/
 ## Deployment
 
 1. Set environment variables on hosting platform
-2. Configure Firebase rules for chat collections
+2. Configure database rules for chat collections
 3. Deploy to Vercel or similar platform
 4. Monitor API usage and costs

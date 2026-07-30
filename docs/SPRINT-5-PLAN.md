@@ -49,7 +49,7 @@ services/
 ```
 
 **Implementation:**
-- [ ] Replace Firebase chat sessions with Prisma storage
+- [ ] Replaced Firebase chat sessions with Prisma storage
 - [ ] Add session management API (`/api/chat/sessions`)
 - [ ] Implement context window management (last N messages)
 - [ ] Add session metadata (language, detected intent)
@@ -140,7 +140,7 @@ lib/ai/
 
 ### Database Schema Updates (Prisma)
 ```prisma
-// Chat Sessions - Replace Firebase
+// Chat Sessions - Replaced Firebase
 model ChatSession {
   id              String   @id @default(uuid())
   sessionId       String   @unique
@@ -1023,7 +1023,7 @@ SENTRY_DSN=
 
 ## Notes
 
-1. **Firebase Removal**: The chat service currently has Firebase stubs. These should be fully replaced with Prisma implementations in Phase 5.1.
+1. **Firebase Removed ✅**: The chat service currently has legacy stubs. These should be fully replaced with Prisma implementations in Phase 5.1.
 
 2. **Existing RBAC**: The RBAC system is partially implemented. Phase 5.2 should complete it with route guards and audit logs.
 

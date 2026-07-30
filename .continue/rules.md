@@ -5,7 +5,7 @@ Tech Stack:
 - React
 - TypeScript
 - Tailwind CSS
-- Firebase
+
 - Vercel
 
 Rules:

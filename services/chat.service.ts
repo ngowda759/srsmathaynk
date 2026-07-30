@@ -1,5 +1,5 @@
 /**
- * Chat Service - Firebase has been removed
+ * Chat Service - Prisma-based implementation
  * This service now provides stub functions as no backend is available
  */
 

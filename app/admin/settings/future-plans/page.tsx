@@ -30,7 +30,7 @@ interface FuturePlansData {
   plans: FuturePlan[];
 }
 
-// Firebase has been removed - using default data only
+// Using default data - using default data only
 // Settings will be managed via Supabase in Sprint 1
 
 const iconOptions = [
@@ -106,7 +106,7 @@ export default function FuturePlansSettingsPage() {
   const [data, setData] = useState<FuturePlansData>(defaultData);
 
   async function saveData() {
-    // Firebase has been removed - save functionality not available
+    // Using default data - save functionality not available
     toast.error("Settings save is not available - backend services have been removed");
   }
 

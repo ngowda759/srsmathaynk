@@ -124,7 +124,7 @@ const colorOptions = [
 export default function FacilitiesPage() {
   const [data] = useState<FacilitiesData>(defaultData);
 
-  // Firebase has been removed - use default data only
+  // Using default data - use default data only
 
   return (
     <>

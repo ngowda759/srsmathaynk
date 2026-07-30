@@ -89,7 +89,7 @@ export default function AdminAuthGuard({
     return <LoadingSpinner />;
   }
 
-  // Firebase has been removed - skip Firebase config check
+  // Using Prisma/DB - skip legacy config check
 
   // Check if user is logged in (already redirected if not)
   if (!user) {

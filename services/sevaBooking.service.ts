@@ -1,5 +1,5 @@
 /**
- * Seva Booking Service - Firebase has been removed
+ * Seva Booking Service - Prisma-based implementation
  * This service now returns empty arrays as no backend is available
  */
 
@@ -13,7 +13,7 @@ class SevaBookingService {
   }
 
   async getAllBookings(): Promise<SevaBooking[]> {
-    console.log("[SevaBookingService] Firebase removed - returning empty array");
+    console.log("[SevaBookingService] DB unavailable - returning empty array");
     return [];
   }
 

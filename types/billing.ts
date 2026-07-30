@@ -1,6 +1,6 @@
 /**
- * Billing types - Firebase has been removed
- * Using Date instead of Firebase Timestamp
+ * Billing types - Prisma-based
+ * Using Date instead of Date
  */
 
 export type BillStatus = "draft" | "sent" | "paid" | "partial" | "overdue" | "cancelled";

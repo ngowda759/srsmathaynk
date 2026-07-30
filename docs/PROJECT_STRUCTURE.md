@@ -123,7 +123,7 @@ Rayaramathaynk/
 ├── docs/                        # Documentation
 │   ├── API.md
 │   ├── PANCHANGA.md
-│   ├── FIREBASE.md
+│   ├── FIREBASE_TO_SUPABASE_MIGRATION.md  # Historical migration docs
 │   └── PROJECT_STRUCTURE.md
 │
 ├── scripts/                     # Utility scripts

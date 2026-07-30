@@ -1,5 +1,5 @@
 /**
- * Pooja Service - Firebase has been removed
+ * Pooja Service - Prisma-based implementation
  * This service now returns empty arrays as no backend is available
  */
 
@@ -9,7 +9,7 @@ const COLLECTION_NAME = "dailyPoojas";
 
 export const poojaService = {
   async getPoojas(): Promise<DailyPooja[]> {
-    console.log("[PoojaService] Firebase removed - returning empty array");
+    console.log("[PoojaService] DB unavailable - returning empty array");
     return [];
   },
 

@@ -1,5 +1,5 @@
 /**
- * Aaradhane Service - Firebase has been removed
+ * Aaradhane Service - Prisma-based implementation
  * This service now returns empty arrays as no backend is available
  */
 
@@ -21,7 +21,7 @@ function isAaradhaneUpcoming(dates: string[]): boolean {
 
 export const aaradhaneService = {
   async getAaradhanes(): Promise<Aaradhane[]> {
-    console.log("[AaradhaneService] Firebase removed - returning empty array");
+    console.log("[AaradhaneService] DB unavailable - returning empty array");
     return [];
   },
 

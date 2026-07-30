@@ -34,7 +34,7 @@ Generated: 2026-07-13 07:20:32
 | context/AuthContext.tsx | 1 | 0 |
 | hooks/useGallery.ts | 1 | 0 |
 | hooks/useHomepage.ts | 1 | 0 |
-| lib/firebase.ts | 1 | 0 |
+| lib/supabase/client.ts | 1 | 0 |
 | tests/functional/09_performance_security.spec.ts | 1 | 0 |
 | app/(public)/aaradhane/page.tsx | 0 | 1 |
 | app/(public)/donation/failure/page.tsx | 0 | 1 |
@@ -117,7 +117,7 @@ Generated: 2026-07-13 07:20:32
 ### hooks/useHomepage.ts:14
 **ERROR**: Error: Calling setState synchronously within an effect can trigger cascading renders
 
-### lib/firebase.ts:115
+### lib/supabase/client.ts:115
 **ERROR**: Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 
 ### tests/functional/09_performance_security.spec.ts:325

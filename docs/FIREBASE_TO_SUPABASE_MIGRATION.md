@@ -9,7 +9,7 @@
 
 ## Overview
 
-This document tracks the migration from Firebase Authentication to Supabase Authentication for the SRS Math Portal.
+This document tracks the migration from Supabase Authentication to Supabase Authentication for the SRS Math Portal.
 
 ## Why Migrate?
 
@@ -61,8 +61,8 @@ This document tracks the migration from Firebase Authentication to Supabase Auth
 
 ## Success Criteria
 
-- [x] No Firebase Authentication imports remain
-- [x] Firebase Authentication dependency removed
+- [x] No Supabase Authentication imports remain
+- [x] Supabase Authentication dependency removed
 - [x] Supabase Authentication fully operational
 - [x] Existing RBAC unchanged
 - [x] Middleware working
@@ -193,7 +193,7 @@ npm run build
 ## Rollback Plan
 
 If issues are encountered:
-1. Keep Firebase Auth SDK in package.json (commented)
+1. Keep Supabase Auth SDK in package.json (commented)
 2. Keep Firebase types file (commented)
 3. Can revert to Firebase by:
    - Restoring Firebase types
@@ -202,8 +202,8 @@ If issues are encountered:
 
 ## Success Criteria
 
-- [ ] No Firebase Authentication imports remain
-- [ ] Firebase Authentication dependency removed
+- [ ] No Supabase Authentication imports remain
+- [ ] Supabase Authentication dependency removed
 - [ ] Supabase Authentication fully operational
 - [ ] Existing RBAC unchanged
 - [ ] Middleware working
