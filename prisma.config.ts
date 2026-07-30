@@ -2,6 +2,13 @@
 // npm install --save-dev prisma dotenv
 import "dotenv/config"
 import { defineConfig } from "prisma/config"
+import { config as loadEnv } from "dotenv"
+
+// Only load .env files if DATABASE_URL is not already set (e.g., in CI with dummy values)
+if (!process.env.DATABASE_URL) {
+  loadEnv({ path: ".env.local" })
+  loadEnv()
+}
 
 export default defineConfig({
   schema: "prisma/schema.prisma",
