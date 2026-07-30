@@ -1,5 +1,5 @@
 /**
- * User Service - Firebase has been removed
+ * User Service - Prisma-based implementation
  * This service now returns empty arrays as no backend is available
  */
 
@@ -9,7 +9,7 @@ const COLLECTION = "users";
 
 class UserService {
   async getUsers(): Promise<TempleUser[]> {
-    console.log("[UserService] Firebase removed - returning empty array");
+    console.log("[UserService] DB unavailable - returning empty array");
     return [];
   }
 

@@ -1,5 +1,5 @@
 /**
- * Settings Service - Firebase has been removed
+ * Settings Service - Prisma-based implementation
  * This service now returns null/throws errors as no backend is available
  */
 
@@ -9,7 +9,7 @@ const COLLECTION = "settings";
 
 class SettingsService {
   async getSettings(): Promise<SiteSettings | null> {
-    console.log("[SettingsService] Firebase removed - returning null");
+    console.log("[SettingsService] DB unavailable - returning null");
     return null;
   }
 

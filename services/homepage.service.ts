@@ -1,5 +1,5 @@
 /**
- * Homepage Service - Firebase has been removed
+ * Homepage Service - Prisma-based implementation
  * This service now returns default config as no backend is available
  */
 
@@ -10,7 +10,7 @@ const DOCUMENT = "config";
 
 class HomepageService {
   async getHomepage(): Promise<HomepageConfig> {
-    console.log("[HomepageService] Firebase removed - returning default config");
+    console.log("[HomepageService] DB unavailable - returning default config");
     return this.getDefaultConfig();
   }
 

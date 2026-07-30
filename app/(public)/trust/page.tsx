@@ -48,7 +48,7 @@ const defaultData: TrustCommitteeData = {
 export default function TrustCommitteePage() {
   const [data] = useState<TrustCommitteeData>(defaultData);
 
-  // Firebase has been removed - use default data only
+  // Using default data - use default data only
 
   const activeMembers = data.members
     .filter((m) => m.isActive)

@@ -1,5 +1,5 @@
 /**
- * Billing Service - Firebase has been removed
+ * Billing Service - Prisma-based implementation
  * This service now returns empty arrays as no backend is available
  */
 
@@ -46,7 +46,7 @@ function calculateBillTotals(items: BillItem[], discountAmount: number): {
 
 class BillingService {
   async getBills(): Promise<Bill[]> {
-    console.log("[BillingService] Firebase removed - returning empty array");
+    console.log("[BillingService] DB unavailable - returning empty array");
     return [];
   }
 

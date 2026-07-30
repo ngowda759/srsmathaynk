@@ -1,6 +1,6 @@
 /**
  * Chat Session Service (Sprint 5.1)
- * Replaces Firebase with Prisma-based session management
+ * Replaces legacy approach with Prisma-based session management
  */
 
 import { prisma } from '@/lib/db';

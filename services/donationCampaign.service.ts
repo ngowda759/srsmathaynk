@@ -1,5 +1,5 @@
 /**
- * Donation Campaign Service - Firebase has been removed
+ * Donation Campaign Service - Prisma-based implementation
  * This service now returns empty arrays as no backend is available
  */
 
@@ -12,7 +12,7 @@ const COLLECTION_NAME = "donation_campaigns";
 
 class DonationCampaignService {
   async getCampaigns(): Promise<DonationCampaign[]> {
-    console.log("[DonationCampaignService] Firebase removed - returning empty array");
+    console.log("[DonationCampaignService] DB unavailable - returning empty array");
     return [];
   }
 

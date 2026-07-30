@@ -289,7 +289,7 @@ test.describe('Gallery Page Functional Tests', () => {
     page.on('console', msg => {
       if (msg.type() === 'error') {
         const text = msg.text();
-        if (!text.includes('Firebase') && !text.includes('favicon')) {
+        if (!text.includes('favicon')) {
           errors.push(text);
         }
       }

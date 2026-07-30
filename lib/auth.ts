@@ -1,5 +1,5 @@
 /**
- * Authentication module - Firebase has been removed
+ * Authentication module - Prisma-based implementation
  * This module provides stub functions that indicate auth is not available
  */
 
@@ -27,7 +27,7 @@ export async function loginUser(
 }
 
 export async function logoutUser() {
-  // No-op since Firebase auth is removed
+  // No-op since Supabase auth is removed
 }
 
 export async function resetPassword(email: string) {

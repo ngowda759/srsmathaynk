@@ -5,7 +5,7 @@ import { getTempleGalleryImages } from "@/lib/gallery";
 export const revalidate = 60;
 
 export default async function Home() {
-  // Firebase has been removed - use default event date (15 days from now)
+  // Using default data - use default event date (15 days from now)
   const nextMajorEvent = (() => {
     const date = new Date();
     date.setDate(date.getDate() + 15);

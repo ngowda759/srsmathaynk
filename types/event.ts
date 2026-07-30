@@ -1,6 +1,6 @@
 /**
  * Event Types - Aligns with Prisma schema
- * Replaces Firebase-based types
+ * Standard TypeScript types
  */
 
 // Event classification types

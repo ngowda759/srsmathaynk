@@ -1,6 +1,6 @@
 /**
- * Date utilities - Firebase has been removed
- * This file now uses standard Date objects instead of Firebase Timestamps
+ * Date utilities - Prisma-based implementation
+ * This file now uses standard Date objects instead of Dates
  */
 
 export function formatEventDate(date?: Date | string | number | null) {

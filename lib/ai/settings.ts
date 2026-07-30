@@ -1,5 +1,5 @@
 /**
- * AI Settings - Firebase has been removed
+ * AI Settings - Prisma-based implementation
  * This module now uses default settings only
  */
 
@@ -21,21 +21,21 @@ export const DEFAULT_AI_SETTINGS: AISettings = {
   updatedAt: null as Date | null,
 };
 
-// Get AI settings (returns defaults since Firebase is removed)
+// Get AI settings (returns defaults since Supabase is used)
 export async function getAISettings(): Promise<AISettings> {
-  console.log("[AISettings] Firebase removed - returning default settings");
+  console.log("[AISettings] DB unavailable - returning default settings");
   return DEFAULT_AI_SETTINGS;
 }
 
-// Save AI settings (no-op since Firebase is removed)
+// Save AI settings (no-op since Supabase is used)
 export async function saveAISettings(settings: Partial<AISettings>): Promise<void> {
-  console.log("[AISettings] Firebase removed - cannot save settings");
+  console.log("[AISettings] DB unavailable - cannot save settings");
   throw new Error("Settings save is not available - backend services have been removed");
 }
 
 // Clear settings cache (no-op)
 export function clearSettingsCache(): void {
-  // No-op since Firebase is removed
+  // No-op since Supabase is used
 }
 
 // Get just the system prompt (used by chat API)

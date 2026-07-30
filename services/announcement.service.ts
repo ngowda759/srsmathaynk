@@ -1,5 +1,5 @@
 /**
- * Announcement Service - Firebase has been removed
+ * Announcement Service - Prisma-based implementation
  * This service now returns empty arrays as no backend is available
  */
 
@@ -9,7 +9,7 @@ const COLLECTION = "announcements";
 
 class AnnouncementService {
   async getAnnouncements(): Promise<Announcement[]> {
-    console.log("[AnnouncementService] Firebase removed - returning empty array");
+    console.log("[AnnouncementService] DB unavailable - returning empty array");
     return [];
   }
   

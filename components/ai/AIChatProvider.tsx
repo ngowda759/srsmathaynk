@@ -95,18 +95,18 @@ export function AIChatProvider({ children }: AIChatProviderProps) {
     loadUserSessions();
   }, [user?.id]);
 
-  // Save messages to Firebase
-  const saveToFirebase = useCallback(async (message: AIMessage, currentSessionId: string | null) => {
+  // Save messages to database
+  const saveToDb = useCallback(async (message: AIMessage, currentSessionId: string | null) => {
     if (!currentSessionId) return;
     try {
       await saveMessage(currentSessionId, message);
     } catch (err) {
-      // Silently ignore Firebase errors - message history is optional
+      // Silently ignore errors - message history is optional
       // Don't log to console as this is not critical functionality
     }
   }, []);
 
-  // Load session history from Firebase
+  // Load session history from database
   const loadSessionHistory = useCallback(async (historySessionId: string) => {
     setIsLoadingHistory(true);
     try {
@@ -181,9 +181,9 @@ export function AIChatProvider({ children }: AIChatProviderProps) {
         localStorage.setItem("raya_session_id", data.sessionId);
       }
 
-      // Save messages to Firebase
-      await saveToFirebase(userMessage, currentSessionId);
-      await saveToFirebase(data.message, currentSessionId);
+      // Save messages to database
+      await saveToDb(userMessage, currentSessionId);
+      await saveToDb(data.message, currentSessionId);
       
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Failed to send message";
@@ -218,11 +218,11 @@ export function AIChatProvider({ children }: AIChatProviderProps) {
         timestamp: Date.now(),
       };
       setMessages((prev) => [...prev, userFriendlyError]);
-      await saveToFirebase(userFriendlyError, currentSessionId);
+      await saveToDb(userFriendlyError, currentSessionId);
     } finally {
       setIsLoading(false);
     }
-  }, [messages, sessionId, user, isLoading, saveToFirebase]);
+  }, [messages, sessionId, user, isLoading, saveToDb]);
 
   const clearMessages = useCallback(() => {
     setMessages([]);
@@ -274,14 +274,14 @@ export function AIChatProvider({ children }: AIChatProviderProps) {
 
       const data = await response.json();
       setMessages((prev) => [...prev, data.message]);
-      await saveToFirebase(data.message, sessionId);
+      await saveToDb(data.message, sessionId);
     } catch (err) {
       console.error("Regenerate error:", err);
       setError(err instanceof Error ? err.message : "Failed to regenerate response");
     } finally {
       setIsLoading(false);
     }
-  }, [lastUserMessage, isLoading, messages, sessionId, user, saveToFirebase]);
+  }, [lastUserMessage, isLoading, messages, sessionId, user, saveToDb]);
 
   const value: AIChatContextType = {
     messages,

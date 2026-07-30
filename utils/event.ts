@@ -1,6 +1,6 @@
 /**
- * Event utilities - Firebase has been removed
- * Using standard Date objects instead of Firebase Timestamp
+ * Event utilities - Prisma-based implementation
+ * Using standard Date objects instead of Date
  */
 
 import { TempleEvent, EventStatus } from "@/types/event";

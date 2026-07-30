@@ -9,7 +9,7 @@ Base URL: `https://your-domain.com/api`
 ## Admin User Management
 
 ### 1. Create Super Admin
-Creates a new super admin user with Firebase Authentication and Firestore.
+Creates a new super admin user with Supabase Authentication and Firestore.
 
 **Endpoint:** `POST /api/admin/users/create-admin`
 
@@ -80,7 +80,7 @@ Content-Type: application/json
 {
   "success": true,
   "message": "User user@example.com has been set as super_admin",
-  "userId": "firebase-uid-123"
+  "userId": "user-123"
 }
 ```
 

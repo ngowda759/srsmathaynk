@@ -99,7 +99,7 @@ const defaultData: AboutUsData = {
 export default function AboutPage() {
   const [data] = useState<AboutUsData>(defaultData);
 
-  // Firebase has been removed - use default data only
+  // Using default data - use default data only
   // If dynamic data loading is needed, it will be implemented via Supabase in Sprint 1
 
   return (
