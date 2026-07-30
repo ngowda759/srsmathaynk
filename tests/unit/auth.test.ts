@@ -15,6 +15,7 @@ const mockSupabaseAuth = {
   getUser: vi.fn(),
   exchangeCodeForSession: vi.fn(),
   verifyOtp: vi.fn(),
+  signInWithOAuth: vi.fn(),
 }
 
 vi.mock('@supabase/supabase-js', () => ({
@@ -193,6 +194,88 @@ describe('Auth Service', () => {
 
       expect(result.success).toBe(false)
       expect(result.error).toBe('Failed to send reset email')
+    })
+  })
+
+  describe('signInWithGoogle', () => {
+    it('should return success when Google OAuth is initiated', async () => {
+      const { signInWithGoogle } = await import('@/services/auth.client')
+      
+      mockSupabaseAuth.signInWithOAuth.mockResolvedValue({
+        data: { provider: 'google', url: 'https://supabase.co/callback' },
+        error: null,
+      })
+
+      const result = await signInWithGoogle()
+
+      expect(result.success).toBe(true)
+      expect(mockSupabaseAuth.signInWithOAuth).toHaveBeenCalledWith({
+        provider: 'google',
+        options: expect.objectContaining({
+          redirectTo: expect.stringContaining('/api/auth/callback'),
+        }),
+      })
+    })
+
+    it('should return error when Google OAuth fails', async () => {
+      const { signInWithGoogle } = await import('@/services/auth.client')
+      
+      mockSupabaseAuth.signInWithOAuth.mockResolvedValue({
+        data: null,
+        error: { message: 'OAuth failed' },
+      })
+
+      const result = await signInWithGoogle()
+
+      expect(result.success).toBe(false)
+      expect(result.error).toBe('OAuth failed')
+    })
+  })
+
+  describe('updatePassword', () => {
+    it('should return success when password is updated', async () => {
+      const { updatePassword } = await import('@/services/auth.client')
+      
+      // Mock getUser first since that's called first
+      mockSupabaseAuth.getUser.mockResolvedValue({
+        data: { user: { email: 'test@example.com' } },
+        error: null,
+      })
+      // Then mock signInWithPassword
+      mockSupabaseAuth.signInWithPassword.mockResolvedValue({
+        data: { user: { email: 'test@example.com' } },
+        error: null,
+      })
+      // Finally mock updateUser
+      mockSupabaseAuth.updateUser.mockResolvedValue({
+        data: { user: { id: 'test-user-id' } },
+        error: null,
+      })
+
+      const result = await updatePassword('currentPassword', 'newPassword')
+
+      expect(result.success).toBe(true)
+      expect(mockSupabaseAuth.updateUser).toHaveBeenCalledWith({
+        password: 'newPassword',
+      })
+    })
+
+    it('should return error when current password is incorrect', async () => {
+      const { updatePassword } = await import('@/services/auth.client')
+      
+      mockSupabaseAuth.getUser.mockResolvedValue({
+        data: { user: { email: 'test@example.com' } },
+        error: null,
+      })
+      mockSupabaseAuth.signInWithPassword.mockResolvedValue({
+        data: null,
+        error: { message: 'Invalid login credentials' },
+      })
+
+      const result = await updatePassword('wrongPassword', 'newPassword')
+
+      expect(result.success).toBe(false)
+      expect(result.error).toBe('Current password is incorrect')
     })
   })
 })
