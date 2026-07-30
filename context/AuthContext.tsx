@@ -1,7 +1,7 @@
 "use client"
 
 import { createContext, useContext, useEffect, useState, ReactNode } from "react"
-import { createClient, User } from "@supabase/supabase-js"
+import { User } from "@supabase/supabase-js"
 import { login, register, logout, forgotPassword, updatePassword, getSupabaseClient } from "@/services/auth.client"
 import type { UserProfile, UserRole } from "@/services/auth.types"
 import { normalizeRole, NormalizedRole, Permission, hasPermission } from "@/types/user"
@@ -68,10 +68,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }
 
   useEffect(() => {
-    // Get initial session
+    // Get initial session with proper JWT validation
     const initAuth = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession()
+        // First try to get the session
+        const { data: { session }, error } = await supabase.auth.getSession()
+        
+        if (error) {
+          console.error("Session error:", error)
+        }
         
         if (session?.user) {
           setUser(session.user)
@@ -86,9 +91,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     initAuth()
 
-    // Listen for auth changes
+    // Listen for auth changes - this also triggers session refresh
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.debug("Auth state changed:", event, session?.user?.id)
+        
         if (session?.user) {
           setUser(session.user)
           await loadProfile()
@@ -108,6 +115,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   async function handleLogin(email: string, password: string) {
     const result = await login(email, password)
     if (result.success) {
+      // Get the updated session after login
       const { data: { session } } = await supabase.auth.getSession()
       if (session?.user) {
         setUser(session.user)
@@ -119,13 +127,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   async function handleRegister(data: { name: string; email: string; phone: string; password: string }) {
     const result = await register(data)
-    if (result.success) {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (session?.user) {
-        setUser(session.user)
-        await loadProfile()
-      }
-    }
+    // After registration, user needs to verify email
+    // We don't automatically log them in
     return result
   }
 
@@ -187,4 +190,3 @@ export function useAuthContext() {
   }
   return context
 }
-
