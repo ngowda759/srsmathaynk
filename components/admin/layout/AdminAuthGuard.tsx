@@ -72,6 +72,14 @@ export default function AdminAuthGuard({
     return () => clearTimeout(timer);
   }, []);
 
+  // Redirect to login if not authenticated (in useEffect to avoid render-time navigation)
+  useEffect(() => {
+    if (!loading && isClient && !user) {
+      const redirect = searchParams.get("redirect") || "/admin";
+      router.replace(`/login?redirect=${encodeURIComponent(redirect)}`);
+    }
+  }, [loading, isClient, user, searchParams, router]);
+
   // Show loading while checking auth
   if (loading || !isClient) {
     return <LoadingSpinner />;
@@ -79,11 +87,8 @@ export default function AdminAuthGuard({
 
   // Firebase has been removed - skip Firebase config check
 
-  // Check if user is logged in
+  // Check if user is logged in (already redirected if not)
   if (!user) {
-    // Redirect to login with the return URL
-    const redirect = searchParams.get("redirect") || "/admin";
-    router.replace(`/login?redirect=${encodeURIComponent(redirect)}`);
     return <LoadingSpinner />;
   }
 
