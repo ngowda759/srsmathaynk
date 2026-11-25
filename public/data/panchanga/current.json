@@ -2,58 +2,58 @@
   "metadata": {
     "generator": "Rayara Panchanga Engine",
     "version": "1.0.0",
-    "generated_at": "2026-11-24T23:32:40.432358",
-    "valid_for": "2026-11-24",
+    "generated_at": "2026-11-25T00:56:29.856167",
+    "valid_for": "2026-11-25",
     "timezone": "Asia/Kolkata"
   },
-  "date": "2026-11-24",
+  "date": "2026-11-25",
   "location": {
     "latitude": 13.1005,
     "longitude": 77.5963,
     "timezone": "Asia/Kolkata"
   },
   "weekday": {
-    "english": "Tuesday",
-    "sanskrit": "Mangalavara",
-    "number": 2
+    "english": "Wednesday",
+    "sanskrit": "Budhavara",
+    "number": 3
   },
   "sun": {
-    "sunrise": "2026-11-24T06:26:08.024097+05:30",
-    "sunset": "2026-11-24T17:46:12.840509+05:30",
-    "day_duration_hours": 11.3347
+    "sunrise": "2026-11-25T06:26:38.270684+05:30",
+    "sunset": "2026-11-25T17:46:18.025635+05:30",
+    "day_duration_hours": 11.3277
   },
   "tithi": {
-    "number": 15,
-    "name": "Shukla Purnima",
-    "paksha": "Shukla",
-    "start": "2026-11-23T23:42:57.448006+05:30",
-    "end": "2026-11-24T20:23:36.412582+05:30"
+    "number": 16,
+    "name": "Krishna Pratipada",
+    "paksha": "Krishna",
+    "start": "2026-11-24T20:23:35.897799+05:30",
+    "end": "2026-11-25T16:50:47.147503+05:30"
   },
   "nakshatra": {
-    "number": 3,
-    "name": "Krittika",
-    "pada": 1,
-    "lord": "Sun",
-    "start": "2026-11-24T02:02:07.936247+05:30",
-    "end": "2026-11-24T23:25:06.939912+05:30"
+    "number": 4,
+    "name": "Rohini",
+    "pada": 2,
+    "lord": "Moon",
+    "start": "2026-11-24T23:25:06.425089+05:30",
+    "end": "2026-11-25T20:36:14.393544+05:30"
   },
   "yoga": {
-    "number": 19,
-    "name": "Parigha",
-    "start": "2026-11-23T19:58:20.299622+05:30",
-    "end": "2026-11-24T16:05:29.205617+05:30"
+    "number": 20,
+    "name": "Shiva",
+    "start": "2026-11-24T16:05:28.690794+05:30",
+    "end": "2026-11-25T11:59:32.733495+05:30"
   },
   "karana": {
-    "number": 7,
-    "name": "Vishti",
-    "start": "2026-11-23T23:42:57.448006+05:30",
-    "end": "2026-11-24T10:05:40.631466+05:30"
+    "number": 2,
+    "name": "Balava",
+    "start": "2026-11-24T20:23:35.897799+05:30",
+    "end": "2026-11-25T06:38:10.409356+05:30"
   },
   "masa": {
     "number": 8,
     "name": "Kārttika",
     "is_adhik": false,
-    "paksha": "Shukla"
+    "paksha": "Krishna"
   },
   "samvat": {
     "vikram": 2083,
@@ -62,26 +62,26 @@
   },
   "rahu_kalam": {
     "name": "Rahu Kalam",
-    "start": "2026-11-24T14:56:11.714106+05:30",
-    "end": "2026-11-24T16:21:12.329088+05:30",
+    "start": "2026-11-25T12:06:28.130678+05:30",
+    "end": "2026-11-25T13:31:25.595687+05:30",
     "is_auspicious": false
   },
   "yama_gandam": {
     "name": "Yama Gandam",
-    "start": "2026-11-24T13:31:11.099085+05:30",
-    "end": "2026-11-24T14:56:11.714106+05:30",
+    "start": "2026-11-25T14:56:23.060695+05:30",
+    "end": "2026-11-25T16:21:20.525704+05:30",
     "is_auspicious": false
   },
   "gulika_kalam": {
     "name": "Gulika Kalam",
-    "start": "2026-11-24T12:06:10.484103+05:30",
-    "end": "2026-11-24T13:31:11.099085+05:30",
+    "start": "2026-11-25T10:41:30.665670+05:30",
+    "end": "2026-11-25T12:06:28.130678+05:30",
     "is_auspicious": false
   },
   "abhijit_muhurat": {
     "name": "Abhijit Muhurat",
-    "start": "2026-11-24T11:43:30.320087+05:30",
-    "end": "2026-11-24T12:28:50.648080+05:30",
+    "start": "2026-11-25T11:43:48.806689+05:30",
+    "end": "2026-11-25T12:29:07.454707+05:30",
     "is_auspicious": true
   },
   "durmuhurta": [],
